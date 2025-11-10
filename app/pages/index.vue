@@ -1,11 +1,20 @@
 <script setup>
 useSeoMeta({
-  title: 'Музыкальный сервис - Главная',
-  description: 'Слушайте лучшую музыку'
-})
+  title: "Музыкальный сервис - Главная",
+  description: "Слушайте лучшую музыку",
+});
 
-const { tracks, loading, error, fetchTracks } = useTracks()
-const searchQuery = ref('')
+const {
+  tracks,
+  filteredTracks,
+  loading,
+  error,
+  fetchTracks,
+  applyFilters,
+  clearFilters,
+  currentFilters,
+} = useTracks();
+const searchQuery = ref("");
 
 const fallbackTracks = ref([
   {
@@ -14,7 +23,9 @@ const fallbackTracks = ref([
     subtitle: "",
     author: "Nero",
     album: "Welcome Reality", 
-    duration: "4:44"
+    duration: "4:44",
+    genre: "Electronic",
+    release_date: "2011-08-12"
   },
   {
     id: 2,
@@ -22,7 +33,9 @@ const fallbackTracks = ref([
     subtitle: "",
     author: "Dynoro, Outwork, Mr. Gee",
     album: "Elektro",
-    duration: "2:22"
+    duration: "2:22",
+    genre: "House",
+    release_date: "2018-05-20"
   },
   {
     id: 3,
@@ -30,38 +43,78 @@ const fallbackTracks = ref([
     subtitle: "",
     author: "Ali Bakgor", 
     album: "I'm Fire",
-    duration: "2:22"
+    duration: "2:22",
+    genre: "Pop",
+    release_date: "2019-03-15"
+  },
+  {
+    id: 4,
+    title: "Runaway",
+    subtitle: "",
+    author: "Nero",
+    album: "Welcome Reality",
+    duration: "4:05",
+    genre: "Electronic",
+    release_date: "2011-08-12"
+  },
+  {
+    id: 5,
+    title: "Must Be The Love",
+    subtitle: "",
+    author: "Dynoro",
+    album: "Greatest Hits",
+    duration: "3:15",
+    genre: "Dance",
+    release_date: "2020-11-30"
   }
 ])
 
 const displayTracks = computed(() => {
-  return tracks.value.length > 0 ? tracks.value : fallbackTracks.value
-})
+  return filteredTracks.value.length > 0
+    ? filteredTracks.value
+    : tracks.value.length > 0
+    ? tracks.value
+    : fallbackTracks.value;
+});
 
 const handleSearch = async () => {
   if (!searchQuery.value.trim()) {
-    await fetchTracks()
-    return
+    await fetchTracks();
+    return;
   }
-  
-  loading.value = true
+
+  loading.value = true;
   try {
-    const filteredTracks = tracks.value.filter(track => 
-      track.title?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      track.author?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      track.album?.toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
-    tracks.value = filteredTracks
+    const searchResults = tracks.value.filter(
+      (track) =>
+        track.title?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+        track.author?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+        track.album?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+        track.genre?.toLowerCase().includes(searchQuery.value.toLowerCase())
+    );
+    filteredTracks.value = searchResults;
   } catch (e) {
-    console.error('Ошибка поиска:', e)
+    console.error("Ошибка поиска:", e);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
+
+const handleFilterChange = (filters) => {
+  applyFilters(filters);
+};
+
+const hasActiveFilters = computed(() => {
+  return (
+    currentFilters.value.authors?.length > 0 ||
+    currentFilters.value.years?.length > 0 ||
+    currentFilters.value.genres?.length > 0
+  );
+});
 
 onMounted(() => {
-  fetchTracks()
-})
+  fetchTracks();
+});
 </script>
 
 <template>
@@ -87,18 +140,27 @@ onMounted(() => {
             </div>
             <h2 class="centerblock__h2">Треки</h2>
 
-            <FilterControls />
+            <FilterControls
+              :tracks="tracks"
+              @filter-change="handleFilterChange"
+            />
+
+            <div v-if="hasActiveFilters" class="filters-status">
+              <span class="filters-status__text">Активные фильтры:</span>
+              <span class="filters-status__clear" @click="clearFilters"
+                >Очистить все</span
+              >
+            </div>
 
             <div v-if="tracks.length > 0" class="data-source">
-               Загружено с сервера: {{ tracks.length }} треков
+              Загружено с сервера: {{ tracks.length }} треков
+              <span v-if="filteredTracks.length !== tracks.length">
+                (отфильтровано: {{ filteredTracks.length }})
+              </span>
             </div>
-            <div v-else class="data-source">
-               Используются тестовые данные
-            </div>
+            <div v-else class="data-source">Используются тестовые данные</div>
 
-            <div v-if="error" class="error-message">
-              Ошибка: {{ error }}
-            </div>
+            <div v-if="error" class="error-message">Ошибка: {{ error }}</div>
 
             <div v-if="loading" class="loading">Загрузка треков...</div>
 
@@ -114,9 +176,7 @@ onMounted(() => {
               />
             </PlayList>
 
-            <div v-else class="no-tracks">
-              Треки не найдены
-            </div>
+            <div v-else class="no-tracks">Треки не найдены</div>
           </div>
 
           <div class="main__sidebar sidebar">
@@ -124,7 +184,7 @@ onMounted(() => {
               <p class="sidebar__personal-name">Sergey.Ivanov</p>
               <div class="sidebar__icon">
                 <svg>
-                  <use xlink:href="/img/icon/sprite.svg#logout"/>
+                  <use xlink:href="/img/icon/sprite.svg#logout" />
                 </svg>
               </div>
             </div>
@@ -164,7 +224,7 @@ onMounted(() => {
 
         <PlayerBar />
 
-        <footer class="footer"/>
+        <footer class="footer" />
       </div>
     </div>
   </div>
@@ -341,5 +401,32 @@ onMounted(() => {
   padding: 5px;
   background: rgba(105, 105, 105, 0.1);
   border-radius: 4px;
+}
+
+.filters-status {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  padding: 10px 15px;
+  background: rgba(182, 114, 255, 0.1);
+  border-radius: 8px;
+  border: 1px solid #b672ff;
+}
+
+.filters-status__text {
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.filters-status__clear {
+  color: #b672ff;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.filters-status__clear:hover {
+  color: #ffffff;
 }
 </style>
