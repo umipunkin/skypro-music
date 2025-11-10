@@ -7,11 +7,35 @@ export const useTracks = () => {
 
   const API_URL = "https://webdev-music-003b5b991590.herokuapp.com";
 
+  const cleanTrackTitle = (title) => {
+    if (!title) return "Без названия";
+
+    let cleanedTitle = title;
+
+    cleanedTitle = cleanedTitle.replace(/https?:\/\/[^\s]+/g, "");
+
+    cleanedTitle = cleanedTitle.replace(
+      /\.(mp3|wav|flac|aac|ogg|m4a|wav)/gi,
+      ""
+    );
+
+    cleanedTitle = cleanedTitle.replace(/\s+/g, " ").trim();
+
+    if (!cleanedTitle) {
+      return "Без названия";
+    }
+
+    return cleanedTitle;
+  };
+
   const fetchTracks = async () => {
     loading.value = true;
     error.value = null;
     try {
-      const response = await $fetch(`${API_URL}/catalog/track/all/`);
+      const response = await $fetch(`${API_URL}/catalog/track/all/`, {
+        timeout: 10000,
+        retry: 2,
+      });
 
       if (!response.data) {
         throw new Error("Некорректная структура данных от сервера");
@@ -23,10 +47,12 @@ export const useTracks = () => {
           genre = genre[0] || "Неизвестный жанр";
         }
 
+        const cleanedTitle = cleanTrackTitle(track.name);
+
         return {
           id: track.id,
-          title: track.name || "Без названия",
-          subtitle: track.track_file || "",
+          title: cleanedTitle,
+          subtitle: "",
           author: track.author || "Неизвестный исполнитель",
           album: track.album || "Неизвестный альбом",
           duration: formatDuration(track.duration_in_seconds || 0),
@@ -40,8 +66,23 @@ export const useTracks = () => {
 
       filteredTracks.value = [...tracks.value];
     } catch (e) {
-      error.value = e.message || "Ошибка при загрузке треков :(";
       console.error(" Ошибка загрузки треков:", e);
+
+      if (e.name === "AbortError" || e.message.includes("timeout")) {
+        error.value =
+          "Превышено время ожидания сервера. Проверьте подключение к интернету.";
+      } else if (e.message.includes("Failed to fetch")) {
+        error.value =
+          "Не удалось подключиться к серверу. Проверьте подключение к интернету.";
+      } else if (e.response?.status === 404) {
+        error.value = "Сервер временно недоступен. Попробуйте позже.";
+      } else if (e.response?.status >= 500) {
+        error.value = "Ошибка на сервере. Попробуйте позже.";
+      } else {
+        error.value =
+          e.message ||
+          "Не удалось загрузить треки. Попробуйте обновить страницу.";
+      }
     } finally {
       loading.value = false;
     }
