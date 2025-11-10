@@ -1,15 +1,17 @@
 <template>
   <nav class="main__nav nav">
     <div class="nav__logo logo">
-      <img class="logo__image" src="/img/logo.png">
+      <img class="logo__image" src="/img/logo.png" >
     </div>
-    <div class="nav__burger burger">
-      <span class="burger__line"/>
-      <span class="burger__line"/>
-      <span class="burger__line"/>
+
+    <div class="nav__burger burger" @click="toggleMenu">
+      <span class="burger__line" />
+      <span class="burger__line" />
+      <span class="burger__line" />
     </div>
+
     <div class="nav__menu menu">
-      <ul class="menu__list">
+      <ul v-show="isMenuVisible" class="menu__list">
         <li class="menu__item">
           <a href="#" class="menu__link">Главное</a>
         </li>
@@ -24,7 +26,14 @@
   </nav>
 </template>
 
-<script setup></script>
+<script setup>
+const isMenuVisible = ref(true);
+
+const toggleMenu = () => {
+  isMenuVisible.value = !isMenuVisible.value;
+  console.log("Меню видимо:", isMenuVisible.value);
+};
+</script>
 
 <style scoped>
 .main__nav {
@@ -48,17 +57,8 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-}
-
-.nav__menu {
-  display: block;
-  visibility: visible;
-}
-
-.logo__image {
-  width: 113.33px;
-  height: 17px;
-  color: #181818;
+  cursor: pointer;
+  margin-bottom: 20px;
 }
 
 .burger__line {
@@ -66,6 +66,15 @@
   width: 100%;
   height: 1px;
   background-color: #d3d3d3;
+}
+
+.nav__burger:hover .burger__line {
+  background-color: #b672ff;
+}
+
+.nav__menu {
+  display: block;
+  visibility: visible;
 }
 
 .menu__list {
@@ -82,5 +91,16 @@
   font-weight: 400;
   font-size: 16px;
   line-height: 24px;
+  text-decoration: none;
+}
+
+.menu__link:hover {
+  color: #b672ff;
+}
+
+.logo__image {
+  width: 113.33px;
+  height: 17px;
+  color: #181818;
 }
 </style>
