@@ -1,7 +1,12 @@
 <template>
   <div class="bar">
     <div class="bar__content">
-      <div class="bar__player-progress" />
+      <div class="bar__player-progress" @click="handleProgressClick">
+        <div
+          class="bar__player-progress-line"
+          :style="{ width: playerStore.progress + '%' }"
+        />
+      </div>
       <div class="bar__player-block">
         <div class="bar__player player">
           <div class="player__controls">
@@ -10,9 +15,15 @@
                 <use xlink:href="/img/icon/sprite.svg#icon-prev" />
               </svg>
             </div>
-            <div class="player__btn-play _btn">
+            <div class="player__btn-play _btn" @click="handlePlay">
               <svg class="player__btn-play-svg">
-                <use xlink:href="/img/icon/sprite.svg#icon-play" />
+                <use
+                  :xlink:href="
+                    playerStore.isPlaying
+                      ? '/img/icon/sprite.svg#icon-pause'
+                      : '/img/icon/sprite.svg#icon-play'
+                  "
+                />
               </svg>
             </div>
             <div class="player__btn-next">
@@ -31,7 +42,6 @@
               </svg>
             </div>
           </div>
-
           <div class="player__track-play track-play">
             <div class="track-play__contain">
               <div class="track-play__image">
@@ -40,28 +50,23 @@
                 </svg>
               </div>
               <div class="track-play__author">
-                <a class="track-play__author-link" href="http://">Ты та...</a>
+                <a
+                  class="track-play__author-link"
+                  href="#"
+                  @click.prevent="selectTrack"
+                >
+                  {{ playerStore.currentTrack?.author || "Выберите трек" }}
+                </a>
               </div>
               <div class="track-play__album">
-                <a class="track-play__album-link" href="http://">Баста</a>
-              </div>
-            </div>
-
-            <div class="track-play__like-dis">
-              <div class="track-play__like _btn-icon">
-                <svg class="track-play__like-svg">
-                  <use xlink:href="/img/icon/sprite.svg#icon-like" />
-                </svg>
-              </div>
-              <div class="track-play__dislike _btn-icon">
-                <svg class="track-play__dislike-svg">
-                  <use xlink:href="/img/icon/sprite.svg#icon-dislike" />
-                </svg>
+                <a class="track-play__album-link" href="#">
+                  {{ playerStore.currentTrack?.album || "" }}
+                </a>
               </div>
             </div>
           </div>
         </div>
-        <div class="bar__volume-block volume">
+        <div class="bar__volume-block">
           <div class="volume__content">
             <div class="volume__image">
               <svg class="volume__svg">
@@ -70,19 +75,122 @@
             </div>
             <div class="volume__progress _btn">
               <input
+                v-model="playerStore.volume"
                 class="volume__progress-line _btn"
                 type="range"
                 name="range"
+                min="0"
+                max="100"
+                @input="updateVolume"
               >
             </div>
           </div>
         </div>
       </div>
     </div>
+    <audio
+      ref="audioRef"
+      @timeupdate="handleTimeUpdate"
+      @ended="handleTrackEnd"
+      @loadedmetadata="handleLoadedMetadata"
+      @error="handleAudioError"
+    />
   </div>
 </template>
 
-<script setup></script>
+<script setup>
+import { usePlayerStore } from "~/stores/player";
+
+const playerStore = usePlayerStore();
+const audioRef = ref(null);
+
+const {
+  playTrack,
+  togglePlayPause,
+  handleTimeUpdate,
+  handleTrackEnd,
+  seekTo,
+  updateVolume,
+  initPlayer,
+} = useAudioPlayer();
+
+onMounted(() => {
+  console.log("PlayerBar mounted, инициализируем плеер");
+  initPlayer(audioRef.value);
+});
+
+const handlePlay = () => {
+  console.log("handlePlay вызван");
+  console.log("Текущий трек:", playerStore.currentTrack);
+  console.log("Состояние воспроизведения:", playerStore.isPlaying);
+
+  if (playerStore.currentTrack) {
+    console.log("Переключаем воспроизведение/паузу");
+    togglePlayPause();
+  } else {
+    console.log("Трек не выбран, нельзя воспроизвести");
+    if (filteredTracks.value && filteredTracks.value.length > 0) {
+      console.log("Автоматически выбираем первый трек");
+      playTrack(filteredTracks.value[0]);
+    }
+  }
+};
+
+const selectTrack = () => {
+  console.log("selectTrack вызван");
+};
+
+const handleProgressClick = (event) => {
+  console.log("handleProgressClick вызван");
+
+  if (!playerStore.currentTrack) {
+    console.log("Трек не выбран, перемотка невозможна");
+    return;
+  }
+
+  const progressBar = event.currentTarget;
+  const clickPosition = event.offsetX;
+  const progressBarWidth = progressBar.offsetWidth;
+  const percentage = (clickPosition / progressBarWidth) * 100;
+
+  console.log("Перемотка на процент:", percentage);
+  seekTo(percentage);
+};
+
+const handleLoadedMetadata = () => {
+  console.log(
+    "Метаданные аудио загружены, длительность:",
+    audioRef.value?.duration
+  );
+};
+
+const handleAudioError = (event) => {
+  console.error("Ошибка аудио:", event);
+};
+
+const filteredTracks = ref([]);
+
+watch(
+  () => playerStore.isPlaying,
+  (newVal) => {
+    console.log("isPlaying изменилось на:", newVal);
+  }
+);
+
+watch(
+  () => playerStore.currentTrack,
+  (newVal) => {
+    console.log("currentTrack изменился на:", newVal);
+  }
+);
+
+watch(
+  () => playerStore.progress,
+  (newVal) => {
+    console.log("progress изменился на:", newVal);
+  }
+);
+</script>
 
 <style scoped>
 .bar {
@@ -102,6 +210,14 @@
   width: 100%;
   height: 5px;
   background: #2e2e2e;
+  cursor: pointer;
+  position: relative;
+}
+
+.bar__player-progress-line {
+  height: 100%;
+  background: #b672ff;
+  transition: width 0.1s ease;
 }
 
 .bar__player-block {
@@ -139,6 +255,7 @@
   padding: 5px;
   display: flex;
   align-items: center;
+  cursor: pointer;
 }
 
 .player__btn-prev {
@@ -242,6 +359,12 @@
   line-height: 24px;
   color: #ffffff;
   white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.track-play__author-link:hover {
+  color: #b672ff;
 }
 
 .track-play__album {
@@ -257,6 +380,7 @@
   font-size: 13px;
   line-height: 24px;
   color: #ffffff;
+  text-decoration: none;
 }
 
 .track-play__like-dis {
@@ -314,5 +438,6 @@
 
 .volume__progress-line {
   width: 109px;
+  cursor: pointer;
 }
 </style>
