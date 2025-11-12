@@ -4,7 +4,7 @@
       <div class="track__title">
         <div class="track__title-image">
           <svg class="track__title-svg">
-            <use xlink:href="/img/icon/sprite.svg#icon-note"></use>
+            <use xlink:href="/img/icon/sprite.svg#icon-note" />
           </svg>
         </div>
         <div class="track__title-text">
@@ -21,7 +21,7 @@
       </div>
       <div class="track__time">
         <svg class="track__time-svg">
-          <use xlink:href="/img/icon/sprite.svg#icon-like"></use>
+          <use xlink:href="/img/icon/sprite.svg#icon-like" />
         </svg>
         <span class="track__time-text">{{ duration }}</span>
       </div>
@@ -33,25 +33,25 @@
 defineProps({
   title: {
     type: String,
-    default: ''
+    default: "",
   },
   subtitle: {
     type: String,
-    default: ''
+    default: "",
   },
   author: {
     type: String,
-    default: ''
+    default: "",
   },
   album: {
     type: String,
-    default: ''
+    default: "",
   },
   duration: {
     type: String,
-    default: ''
-  }
-})
+    default: "",
+  },
+});
 </script>
 
 <style scoped>
