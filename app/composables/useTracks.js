@@ -50,7 +50,7 @@ export const useTracks = () => {
         const cleanedTitle = cleanTrackTitle(track.name);
 
         return {
-          id: track.id,
+          id: track._id,
           title: cleanedTitle,
           subtitle: "",
           author: track.author || "Неизвестный исполнитель",

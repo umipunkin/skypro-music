@@ -184,11 +184,7 @@ onMounted(() => {
                 <AppTrack
                   v-for="track in displayTracks"
                   :key="track.id"
-                  :title="track.title"
-                  :subtitle="track.subtitle"
-                  :author="track.author"
-                  :album="track.album"
-                  :duration="track.duration"
+                  :track="track"
                 />
               </PlayList>
 

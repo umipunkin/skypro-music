@@ -1,5 +1,5 @@
 <template>
-  <div class="playlist__item">
+  <div class="playlist__item" @click="onPlay">
     <div class="playlist__track track">
       <div class="track__title">
         <div class="track__title-image">
@@ -9,49 +9,40 @@
         </div>
         <div class="track__title-text">
           <a class="track__title-link" href="#">
-            {{ title }} <span class="track__title-span">{{ subtitle }}</span>
+            {{ track.title }} <span class="track__title-span">{{ track.subtitle }}</span>
           </a>
         </div>
       </div>
       <div class="track__author">
-        <a class="track__author-link" href="#">{{ author }}</a>
+        <a class="track__author-link" href="#">{{ track.author }}</a>
       </div>
       <div class="track__album">
-        <a class="track__album-link" href="#">{{ album }}</a>
+        <a class="track__album-link" href="#">{{ track.album }}</a>
       </div>
       <div class="track__time">
         <svg class="track__time-svg">
           <use xlink:href="/img/icon/sprite.svg#icon-like" />
         </svg>
-        <span class="track__time-text">{{ duration }}</span>
+        <span class="track__time-text">{{ track.duration }}</span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-defineProps({
-  title: {
-    type: String,
-    default: "",
-  },
-  subtitle: {
-    type: String,
-    default: "",
-  },
-  author: {
-    type: String,
-    default: "",
-  },
-  album: {
-    type: String,
-    default: "",
-  },
-  duration: {
-    type: String,
-    default: "",
-  },
+const {track} = defineProps({
+
+  track: {
+    type: {id: Number, title: String, author: String, album: String, duration: String, release_date: String, url: String, genre: Array},
+    default: null,
+  }
 });
+
+const {playTrack} = useAudioPlayer()
+
+const onPlay = () => {
+  playTrack(track)
+}
 </script>
 
 <style scoped>
