@@ -1,30 +1,15 @@
 <template>
-  <div v-if="isOpen" class="filter__dropdown dropdown">
-    <div class="dropdown__content">
-      <div class="dropdown__list">
-        <div
-          v-for="genre in genres"
-          :key="genre"
-          class="dropdown__item"
-          :class="{ 'dropdown__item--active': selectedGenres.includes(genre) }"
-          @click="toggleGenre(genre)"
-        >
-          <span class="dropdown__text">{{ genre }}</span>
-          <span class="dropdown__checkbox" />
-        </div>
-      </div>
-      <div class="dropdown__actions">
-        <button class="dropdown__clear" @click="clearSelection">
-          Очистить
-        </button>
-        <button class="dropdown__apply" @click="applyFilters">Применить</button>
-      </div>
-    </div>
-  </div>
+  <BaseFilter
+    :is-open="isOpen"
+    :items="genres"
+    :selected-items="selectedGenres"
+    @update:selected-items="$emit('update:selectedGenres', $event)"
+    @apply="$emit('apply')"
+  />
 </template>
 
 <script setup>
-const props = defineProps({
+defineProps({
   isOpen: {
     type: Boolean,
     default: false,
@@ -39,22 +24,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["update:selectedGenres", "apply"]);
-
-const toggleGenre = (genre) => {
-  const updated = props.selectedGenres.includes(genre)
-    ? props.selectedGenres.filter((g) => g !== genre)
-    : [...props.selectedGenres, genre];
-  emit("update:selectedGenres", updated);
-};
-
-const clearSelection = () => {
-  emit("update:selectedGenres", []);
-};
-
-const applyFilters = () => {
-  emit("apply");
-};
+defineEmits(["update:selectedGenres", "apply"]);
 </script>
 
 <style scoped>

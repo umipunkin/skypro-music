@@ -10,7 +10,7 @@
       <div class="bar__player-block">
         <div class="bar__player player">
           <div class="player__controls">
-            <div class="player__btn-prev">
+            <div class="player__btn-prev" @click="handlePrevTrack">
               <svg class="player__btn-prev-svg">
                 <use xlink:href="/img/icon/sprite.svg#icon-prev" />
               </svg>
@@ -26,7 +26,7 @@
                 />
               </svg>
             </div>
-            <div class="player__btn-next">
+            <div class="player__btn-next" @click="handleNextTrack">
               <svg class="player__btn-next-svg">
                 <use xlink:href="/img/icon/sprite.svg#icon-next" />
               </svg>
@@ -105,46 +105,37 @@ const playerStore = usePlayerStore();
 const audioRef = ref(null);
 
 const {
-  playTrack,
-  togglePlayPause,
-  handleTimeUpdate,
-  handleTrackEnd,
-  seekTo,
-  updateVolume,
   initPlayer,
+  togglePlayPause,
+  handleTimeUpdate: handleTimeUpdateComposable,
+  handleTrackEnd: handleTrackEndComposable,
+  seekTo,
+  updateVolume: updateVolumeComposable,
+  playTrack,
+  prevTrack,
+  nextTrack,
 } = useAudioPlayer();
 
 onMounted(() => {
-  console.log("PlayerBar mounted, инициализируем плеер");
-  initPlayer(audioRef.value);
+  if (audioRef.value) {
+    initPlayer(audioRef.value);
+  }
 });
 
 const handlePlay = () => {
-  console.log("handlePlay вызван");
-  console.log("Текущий трек:", playerStore.currentTrack);
-  console.log("Состояние воспроизведения:", playerStore.isPlaying);
-
   if (playerStore.currentTrack) {
-    console.log("Переключаем воспроизведение/паузу");
     togglePlayPause();
   } else {
-    console.log("Трек не выбран, нельзя воспроизвести");
-    if (filteredTracks.value && filteredTracks.value.length > 0) {
-      console.log("Автоматически выбираем первый трек");
-      playTrack(filteredTracks.value[0]);
+    if (playerStore.playlist.length > 0) {
+      playTrack(playerStore.playlist[0]);
     }
   }
 };
 
-const selectTrack = () => {
-  console.log("selectTrack вызван");
-};
+const selectTrack = () => {};
 
 const handleProgressClick = (event) => {
-  console.log("handleProgressClick вызван");
-
   if (!playerStore.currentTrack) {
-    console.log("Трек не выбран, перемотка невозможна");
     return;
   }
 
@@ -153,43 +144,35 @@ const handleProgressClick = (event) => {
   const progressBarWidth = progressBar.offsetWidth;
   const percentage = (clickPosition / progressBarWidth) * 100;
 
-  console.log("Перемотка на процент:", percentage);
   seekTo(percentage);
 };
 
-const handleLoadedMetadata = () => {
-  console.log(
-    "Метаданные аудио загружены, длительность:",
-    audioRef.value?.duration
-  );
-};
+const handleLoadedMetadata = () => {};
 
 const handleAudioError = (event) => {
   console.error("Ошибка аудио:", event);
 };
 
-const filteredTracks = ref([]);
+const handleTimeUpdate = () => {
+  handleTimeUpdateComposable();
+};
 
-watch(
-  () => playerStore.isPlaying,
-  (newVal) => {
-    console.log("isPlaying изменилось на:", newVal);
-  }
-);
+const handleTrackEnd = () => {
+  handleTrackEndComposable();
+  handleNextTrack();
+};
 
-watch(
-  () => playerStore.currentTrack,
-  (newVal) => {
-    console.log("currentTrack изменился на:", newVal);
-  }
-);
+const updateVolume = () => {
+  updateVolumeComposable();
+};
 
-watch(
-  () => playerStore.progress,
-  (newVal) => {
-    console.log("progress изменился на:", newVal);
-  }
-);
+const handlePrevTrack = () => {
+  prevTrack();
+};
+
+const handleNextTrack = () => {
+  nextTrack();
+};
 </script>
 
 <style scoped>

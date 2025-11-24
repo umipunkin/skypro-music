@@ -1,30 +1,60 @@
 <template>
-  <BaseFilter
-    :is-open="isOpen"
-    :items="authors"
-    :selected-items="selectedAuthors"
-    @update:selected-items="$emit('update:selectedAuthors', $event)"
-    @apply="$emit('apply')"
-  />
+  <div v-if="isOpen" class="filter__dropdown dropdown">
+    <div class="dropdown__content">
+      <div class="dropdown__list">
+        <div
+          v-for="item in items"
+          :key="item"
+          class="dropdown__item"
+          :class="{ 'dropdown__item--active': selectedItems.includes(item) }"
+          @click="toggleItem(item)"
+        >
+          <span class="dropdown__text">{{ item }}</span>
+          <span class="dropdown__checkbox" />
+        </div>
+      </div>
+      <div class="dropdown__actions">
+        <button class="dropdown__clear" @click="clearSelection">
+          Очистить
+        </button>
+        <button class="dropdown__apply" @click="applyFilters">Применить</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-defineProps({
+const props = defineProps({
   isOpen: {
     type: Boolean,
     default: false,
   },
-  authors: {
+  items: {
     type: Array,
     default: () => [],
   },
-  selectedAuthors: {
+  selectedItems: {
     type: Array,
     default: () => [],
   },
 });
 
-defineEmits(["update:selectedAuthors", "apply"]);
+const emit = defineEmits(["update:selectedItems", "apply"]);
+
+const toggleItem = (item) => {
+  const updated = props.selectedItems.includes(item)
+    ? props.selectedItems.filter((i) => i !== item)
+    : [...props.selectedItems, item];
+  emit("update:selectedItems", updated);
+};
+
+const clearSelection = () => {
+  emit("update:selectedItems", []);
+};
+
+const applyFilters = () => {
+  emit("apply");
+};
 </script>
 
 <style scoped>

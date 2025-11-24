@@ -1,7 +1,7 @@
 <template>
   <nav class="main__nav nav">
     <div class="nav__logo logo">
-      <img class="logo__image" src="/img/logo.png" >
+      <img class="logo__image" src="/img/logo.png" alt="Логотип" >
     </div>
 
     <div class="nav__burger burger" @click="toggleMenu">
@@ -13,25 +13,24 @@
     <div class="nav__menu menu">
       <ul v-show="isMenuVisible" class="menu__list">
         <li class="menu__item">
-          <a href="#" class="menu__link">Главное</a>
+          <NuxtLink to="/" class="menu__link">Главное</NuxtLink>
         </li>
         <li class="menu__item">
           <a href="#" class="menu__link">Мой плейлист</a>
         </li>
         <li class="menu__item">
-          <a href="../signin.html" class="menu__link">Войти</a>
+          <NuxtLink to="/signin" class="menu__link">Войти</NuxtLink>
         </li>
       </ul>
     </div>
   </nav>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const isMenuVisible = ref(true);
 
 const toggleMenu = () => {
   isMenuVisible.value = !isMenuVisible.value;
-  console.log("Меню видимо:", isMenuVisible.value);
 };
 </script>
 

@@ -9,7 +9,8 @@
         </div>
         <div class="track__title-text">
           <a class="track__title-link" href="#">
-            {{ track.title }} <span class="track__title-span">{{ track.subtitle }}</span>
+            {{ track.title }}
+            <span class="track__title-span">{{ track.subtitle }}</span>
           </a>
         </div>
       </div>
@@ -30,19 +31,18 @@
 </template>
 
 <script setup>
-const {track} = defineProps({
-
+const { track } = defineProps({
   track: {
-    type: {id: Number, title: String, author: String, album: String, duration: String, release_date: String, url: String, genre: Array},
-    default: null,
-  }
+    type: Object,
+    default: () => ({}),
+  },
 });
 
-const {playTrack} = useAudioPlayer()
+const { playTrack } = useAudioPlayer();
 
 const onPlay = () => {
-  playTrack(track)
-}
+  playTrack(track);
+};
 </script>
 
 <style scoped>
@@ -50,6 +50,12 @@ const onPlay = () => {
   width: 100%;
   display: block;
   margin-bottom: 12px;
+  cursor: pointer;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.playlist__item:hover {
+  opacity: 0.7;
 }
 
 .playlist__track {
@@ -125,6 +131,13 @@ const onPlay = () => {
   font-size: 16px;
   line-height: 24px;
   color: #696969;
+}
+
+.track__time {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
 }
 
 .track__time-svg {

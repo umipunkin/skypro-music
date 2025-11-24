@@ -13,15 +13,10 @@ export function useAudioPlayer() {
 
     if (playerStore.audioRef) {
       playerStore.audioRef.volume = playerStore.volume / 100;
-      console.log("Плеер инициализирован, громкость:", playerStore.volume);
     }
   };
 
   const togglePlayPause = async () => {
-    console.log("togglePlayPause вызван, isPlaying:", playerStore.isPlaying);
-    console.log("audioRef:", playerStore.audioRef);
-    console.log("currentTrack:", playerStore.currentTrack);
-
     if (!playerStore.audioRef) {
       console.error("Плеер не инициализирован");
       return;
@@ -34,14 +29,11 @@ export function useAudioPlayer() {
 
     try {
       if (playerStore.isPlaying) {
-        console.log("Ставим на паузу");
         await playerStore.audioRef.pause();
         playerStore.setPlaying(false);
       } else {
-        console.log("Начинаем воспроизведение");
-
-        if (!playerStore.audioRef.src && playerStore.currentTrack.track_file) {
-          playerStore.audioRef.src = playerStore.currentTrack.track_file;
+        if (!playerStore.audioRef.src && playerStore.currentTrack.url) {
+          playerStore.audioRef.src = playerStore.currentTrack.url;
         }
 
         await playerStore.audioRef.play();
@@ -54,8 +46,6 @@ export function useAudioPlayer() {
   };
 
   const playTrack = async (track) => {
-    console.log("playTrack вызван с треком:", track);
-
     if (!playerStore.audioRef) {
       console.error("Плеер не инициализирован");
       return;
@@ -66,19 +56,15 @@ export function useAudioPlayer() {
         !playerStore.currentTrack ||
         playerStore.currentTrack.id !== track.id
       ) {
-        console.log("Загружаем новый трек:", track.title);
         playerStore.setCurrentTrack(track);
-        playerStore.audioRef.src = track.track_file || track.url;
+        playerStore.audioRef.src = track.url || "";
 
         playerStore.setProgress(0);
-
         playerStore.audioRef.load();
       }
 
-      console.log("Запускаем воспроизведение");
       await playerStore.audioRef.play();
       playerStore.setPlaying(true);
-      console.log("Воспроизведение запущено успешно");
     } catch (error) {
       console.error("Ошибка воспроизведения трека:", error);
       playerStore.setPlaying(false);
@@ -86,8 +72,6 @@ export function useAudioPlayer() {
   };
 
   const updateVolume = () => {
-    console.log("updateVolume вызван, volume:", playerStore.volume);
-
     if (!playerStore.audioRef) {
       console.error("Плеер не инициализирован");
       return;
@@ -95,12 +79,9 @@ export function useAudioPlayer() {
 
     const volumeValue = playerStore.volume / 100;
     playerStore.audioRef.volume = volumeValue;
-    console.log("Громкость установлена на:", volumeValue);
   };
 
   const seekTo = (percentage) => {
-    console.log("seekTo вызван, процент:", percentage);
-
     if (!playerStore.audioRef || !playerStore.currentTrack) {
       console.error("Плеер или трек не готов");
       return;
@@ -115,9 +96,6 @@ export function useAudioPlayer() {
       const newTime = (safePercentage / 100) * playerStore.audioRef.duration;
       playerStore.audioRef.currentTime = newTime;
       playerStore.setProgress(safePercentage);
-      console.log("Перемотка на время:", newTime, "сек");
-    } else {
-      console.log("Длительность трека еще не загружена");
     }
   };
 
@@ -134,9 +112,56 @@ export function useAudioPlayer() {
   };
 
   const handleTrackEnd = () => {
-    console.log("Трек завершен");
     playerStore.setPlaying(false);
     playerStore.setProgress(100);
+  };
+
+  const prevTrack = () => {
+    if (!playerStore.currentTrack || playerStore.playlist.length === 0) {
+      return;
+    }
+
+    const currentIndex = playerStore.playlist.findIndex(
+      (track) => track.id === playerStore.currentTrack.id
+    );
+
+    if (currentIndex === -1) {
+      return;
+    }
+
+    let prevIndex;
+    if (currentIndex === 0) {
+      prevIndex = playerStore.playlist.length - 1;
+    } else {
+      prevIndex = currentIndex - 1;
+    }
+
+    const prevTrack = playerStore.playlist[prevIndex];
+    playTrack(prevTrack);
+  };
+
+  const nextTrack = () => {
+    if (!playerStore.currentTrack || playerStore.playlist.length === 0) {
+      return;
+    }
+
+    const currentIndex = playerStore.playlist.findIndex(
+      (track) => track.id === playerStore.currentTrack.id
+    );
+
+    if (currentIndex === -1) {
+      return;
+    }
+
+    let nextIndex;
+    if (currentIndex === playerStore.playlist.length - 1) {
+      nextIndex = 0;
+    } else {
+      nextIndex = currentIndex + 1;
+    }
+
+    const nextTrack = playerStore.playlist[nextIndex];
+    playTrack(nextTrack);
   };
 
   return {
@@ -147,5 +172,7 @@ export function useAudioPlayer() {
     handleTrackEnd,
     seekTo,
     updateVolume,
+    prevTrack,
+    nextTrack,
   };
 }
