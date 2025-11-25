@@ -1,9 +1,88 @@
+<template>
+  <div>
+    <div class="centerblock__search search">
+      <svg class="search__svg">
+        <use xlink:href="/img/icon/sprite.svg#icon-search" />
+      </svg>
+      <input
+        v-model="searchQuery"
+        :disabled="loading"
+        class="search__text"
+        type="search"
+        placeholder="Поиск"
+        name="search"
+        @input="handleSearch"
+      >
+    </div>
+    <h2 class="centerblock__h2">Треки</h2>
+
+    <div v-if="loading" class="loading-state">
+      <div class="loading-spinner" />
+      <p class="loading-text">Загрузка...</p>
+    </div>
+
+    <div v-else-if="error" class="error-state">
+      <div class="error-icon">⚠️</div>
+      <p class="error-text">{{ error }}</p>
+      <button class="retry-button" @click="retryLoading">
+        Попробовать снова
+      </button>
+    </div>
+
+    <template v-else>
+      <FilterControls :tracks="tracks" @filter-change="handleFilterChange" />
+
+      <div v-if="hasActiveFilters" class="filters-status">
+        <span class="filters-status__text">Активные фильтры:</span>
+        <span class="filters-status__clear" @click="clearFilters"
+          >Очистить все</span
+        >
+      </div>
+
+      <div v-if="tracks.length > 0" class="data-source">
+        Загружено с сервера: {{ tracks.length }} треков
+        <span v-if="filteredTracks.length !== tracks.length">
+          (отфильтровано: {{ filteredTracks.length }})
+        </span>
+      </div>
+      <div v-else class="data-source">Используются тестовые данные</div>
+
+      <PlayList v-if="displayTracks.length > 0">
+        <AppTrack
+          v-for="track in displayTracks"
+          :key="track.id"
+          :track="track"
+          :playlist="displayTracks"
+        />
+      </PlayList>
+
+      <div v-else class="no-tracks">
+        <div class="no-tracks-icon">🎵</div>
+        <p class="no-tracks-text">Треки не найдены</p>
+        <p class="no-tracks-subtext">
+          Попробуйте изменить параметры поиска или фильтры
+        </p>
+      </div>
+    </template>
+  </div>
+</template>
+
 <script setup>
 import { usePlayerStore } from "~/stores/player";
 
+useHead({
+  title: "Главная | Skypro.Music",
+  meta: [
+    {
+      name: "description",
+      content: "Откройте для себя новые треки и создавайте свои плейлисты",
+    },
+  ],
+});
+
 useSeoMeta({
-  title: "Музыкальный сервис - Главная",
-  description: "Слушайте лучшую музыку",
+  title: "Главная | Skypro.Music",
+  description: "Откройте для себя новые треки и создавайте свои плейлисты",
 });
 
 const playerStore = usePlayerStore();
@@ -157,168 +236,7 @@ onMounted(() => {
 });
 </script>
 
-<template>
-  <div id="app">
-    <div class="wrapper">
-      <div class="container">
-        <main class="main">
-          <AppNavbar />
-
-          <div class="main__centerblock centerblock">
-            <div class="centerblock__search search">
-              <svg class="search__svg">
-                <use xlink:href="/img/icon/sprite.svg#icon-search" />
-              </svg>
-              <input
-                v-model="searchQuery"
-                :disabled="loading"
-                class="search__text"
-                type="search"
-                placeholder="Поиск"
-                name="search"
-                @input="handleSearch"
-              >
-            </div>
-            <h2 class="centerblock__h2">Треки</h2>
-
-            <div v-if="loading" class="loading-state">
-              <div class="loading-spinner" />
-              <p class="loading-text">Загрузка...</p>
-            </div>
-
-            <div v-else-if="error" class="error-state">
-              <div class="error-icon" />
-              <p class="error-text">{{ error }}</p>
-              <button class="retry-button" @click="retryLoading">
-                Попробовать снова
-              </button>
-            </div>
-
-            <template v-else>
-              <FilterControls
-                :tracks="tracks"
-                @filter-change="handleFilterChange"
-              />
-
-              <div v-if="hasActiveFilters" class="filters-status">
-                <span class="filters-status__text">Активные фильтры:</span>
-                <span class="filters-status__clear" @click="clearFilters"
-                  >Очистить все</span
-                >
-              </div>
-
-              <div v-if="tracks.length > 0" class="data-source">
-                Загружено с сервера: {{ tracks.length }} треков
-                <span v-if="filteredTracks.length !== tracks.length">
-                  (отфильтровано: {{ filteredTracks.length }})
-                </span>
-              </div>
-              <div v-else class="data-source">Используются тестовые данные</div>
-
-              <PlayList v-if="displayTracks.length > 0">
-                <AppTrack
-                  v-for="track in displayTracks"
-                  :key="track.id"
-                  :track="track"
-                />
-              </PlayList>
-
-              <div v-else class="no-tracks">
-                <div class="no-tracks-icon" />
-                <p class="no-tracks-text">Треки не найдены</p>
-                <p class="no-tracks-subtext">
-                  Попробуйте изменить параметры поиска или фильтры
-                </p>
-              </div>
-            </template>
-          </div>
-
-          <div class="main__sidebar sidebar">
-            <div class="sidebar__personal">
-              <p class="sidebar__personal-name">Sergey.Ivanov</p>
-              <div class="sidebar__icon">
-                <svg>
-                  <use xlink:href="/img/icon/sprite.svg#logout" />
-                </svg>
-              </div>
-            </div>
-            <div class="sidebar__block">
-              <div class="sidebar__list">
-                <div class="sidebar__item">
-                  <a class="sidebar__link" href="#">
-                    <img
-                      class="sidebar__img"
-                      src="/img/playlist01.png"
-                      alt="day's playlist"
-                    >
-                  </a>
-                </div>
-                <div class="sidebar__item">
-                  <a class="sidebar__link" href="#">
-                    <img
-                      class="sidebar__img"
-                      src="/img/playlist02.png"
-                      alt="day's playlist"
-                    >
-                  </a>
-                </div>
-                <div class="sidebar__item">
-                  <a class="sidebar__link" href="#">
-                    <img
-                      class="sidebar__img"
-                      src="/img/playlist03.png"
-                      alt="day's playlist"
-                    >
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </main>
-
-        <PlayerBar />
-
-        <footer class="footer" />
-      </div>
-    </div>
-  </div>
-</template>
-
 <style scoped>
-.wrapper {
-  width: 100%;
-  min-height: 100%;
-  overflow: hidden;
-  background-color: #383838;
-}
-
-.container {
-  max-width: 1920px;
-  height: 100vh;
-  margin: 0 auto;
-  position: relative;
-  background-color: #181818;
-}
-
-.main {
-  flex: 1 1 auto;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-}
-
-.main__centerblock {
-  width: auto;
-  max-width: 50vw;
-  flex-grow: 3;
-  padding: 20px 40px 20px 111px;
-}
-
-.main__sidebar {
-  max-width: 418px;
-  padding: 20px 90px 20px 78px;
-}
-
 .centerblock__search {
   width: 100%;
   border-bottom: 1px solid #4e4e4e;
@@ -370,64 +288,6 @@ onMounted(() => {
   font-weight: 400;
   font-size: 16px;
   line-height: 24px;
-}
-
-.sidebar__personal {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 12px 0 15px 0;
-}
-
-.sidebar__personal-name {
-  font-style: normal;
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 24px;
-  color: #ffffff;
-  margin-right: 16px;
-}
-
-.sidebar__icon {
-  width: 43px;
-  height: 43px;
-  background-color: #313131;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.sidebar__block {
-  height: 100%;
-  padding: 240px 0 0 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-}
-
-.sidebar__list {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.sidebar__item {
-  width: 250px;
-  height: 150px;
-}
-
-.sidebar__item:not(:last-child) {
-  margin-bottom: 30px;
-}
-
-.sidebar__link {
-  width: 100%;
-  height: 100%;
-}
-
-.sidebar__img {
-  width: 100%;
-  height: auto;
 }
 
 .loading-state {
