@@ -10,10 +10,19 @@
 
         <div class="main__sidebar sidebar">
           <div class="sidebar__personal">
-            <p class="sidebar__personal-name">Sergey.Ivanov</p>
-            <div class="sidebar__icon">
+            <p v-if="isAuthenticated" class="sidebar__personal-name">
+              {{ user?.username || user?.email }}
+            </p>
+            <p v-else class="sidebar__personal-name">Гость</p>
+            <div class="sidebar__icon" @click="handleAuthAction">
               <svg>
-                <use xlink:href="/img/icon/sprite.svg#logout" />
+                <use
+                  :xlink:href="
+                    isAuthenticated
+                      ? '/img/icon/sprite.svg#logout'
+                      : '/img/icon/sprite.svg#login'
+                  "
+                />
               </svg>
             </div>
           </div>
@@ -59,33 +68,15 @@
 </template>
 
 <script setup>
-useHead({
-  title: "Skypro.Music - Ваша музыкальная коллекция",
-  meta: [
-    {
-      name: "description",
-      content:
-        "Слушайте лучшую музыку онлайн. Создавайте плейлисты и открывайте новые треки.",
-    },
-    {
-      name: "keywords",
-      content: "музыка, треки, плейлисты, онлайн радио, skypro",
-    },
-    {
-      property: "og:title",
-      content: "Skypro.Music - Ваша музыкальная коллекция",
-    },
-    { property: "og:description", content: "Слушайте лучшую музыку онлайн" },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary_large_image" },
-    { name: "twitter:title", content: "Skypro.Music" },
-    { name: "twitter:description", content: "Слушайте лучшую музыку онлайн" },
-  ],
-  link: [{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" }],
-  htmlAttrs: {
-    lang: "ru",
-  },
-});
+const { user, isAuthenticated, logout } = useAuth();
+
+const handleAuthAction = () => {
+  if (isAuthenticated.value) {
+    logout();
+  } else {
+    navigateTo("/signin");
+  }
+};
 </script>
 
 <style scoped>
