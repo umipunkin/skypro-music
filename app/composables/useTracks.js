@@ -3,7 +3,15 @@ export const useTracks = () => {
   const filteredTracks = ref([]);
   const loading = ref(false);
   const error = ref(null);
-  const currentFilters = ref({});
+
+  const filtersState = ref({
+    activeFilters: {
+      authors: [],
+      years: [],
+      genres: [],
+    },
+    searchQuery: "",
+  });
 
   const API_URL = "https://webdev-music-003b5b991590.herokuapp.com";
 
@@ -11,21 +19,14 @@ export const useTracks = () => {
     if (!title) return "Без названия";
 
     let cleanedTitle = title;
-
     cleanedTitle = cleanedTitle.replace(/https?:\/\/[^\s]+/g, "");
-
     cleanedTitle = cleanedTitle.replace(
       /\.(mp3|wav|flac|aac|ogg|m4a|wav)/gi,
       ""
     );
-
     cleanedTitle = cleanedTitle.replace(/\s+/g, " ").trim();
 
-    if (!cleanedTitle) {
-      return "Без названия";
-    }
-
-    return cleanedTitle;
+    return cleanedTitle || "Без названия";
   };
 
   const fetchTracks = async () => {
@@ -59,32 +60,35 @@ export const useTracks = () => {
           genre: genre,
           release_date: track.release_date || null,
           url: track.track_file || "#",
-          artistUrl: "#",
-          albumUrl: "#",
         };
       });
 
       filteredTracks.value = [...tracks.value];
-    } catch (e) {
-      console.error(" Ошибка загрузки треков:", e);
 
-      if (e.name === "AbortError" || e.message.includes("timeout")) {
-        error.value =
-          "Превышено время ожидания сервера. Проверьте подключение к интернету.";
-      } else if (e.message.includes("Failed to fetch")) {
-        error.value =
-          "Не удалось подключиться к серверу. Проверьте подключение к интернету.";
-      } else if (e.response?.status === 404) {
-        error.value = "Сервер временно недоступен. Попробуйте позже.";
-      } else if (e.response?.status >= 500) {
-        error.value = "Ошибка на сервере. Попробуйте позже.";
-      } else {
-        error.value =
-          e.message ||
-          "Не удалось загрузить треки. Попробуйте обновить страницу.";
-      }
+      loadFiltersFromStorage();
+      applyFilters();
+    } catch (e) {
+      console.error("Ошибка загрузки треков:", e);
+      error.value = getErrorMessage(e);
     } finally {
       loading.value = false;
+    }
+  };
+
+  const getErrorMessage = (error) => {
+    if (error.name === "AbortError" || error.message.includes("timeout")) {
+      return "Превышено время ожидания сервера. Проверьте подключение к интернету.";
+    } else if (error.message.includes("Failed to fetch")) {
+      return "Не удалось подключиться к серверу. Проверьте подключение к интернету.";
+    } else if (error.response?.status === 404) {
+      return "Сервер временно недоступен. Попробуйте позже.";
+    } else if (error.response?.status >= 500) {
+      return "Ошибка на сервере. Попробуйте позже.";
+    } else {
+      return (
+        error.message ||
+        "Не удалось загрузить треки. Попробуйте обновить страницу."
+      );
     }
   };
 
@@ -94,76 +98,116 @@ export const useTracks = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
-  const applyFilters = (filters) => {
-    currentFilters.value = filters;
-
-    if (
-      Object.keys(filters).length === 0 ||
-      (filters.authors?.length === 0 &&
-        filters.years?.length === 0 &&
-        filters.genres?.length === 0)
-    ) {
-      filteredTracks.value = [...tracks.value];
-      return;
+  const loadFiltersFromStorage = () => {
+    if (import.meta.client) {
+      const saved = localStorage.getItem("filtersState");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          filtersState.value.activeFilters =
+            parsed.activeFilters || filtersState.value.activeFilters;
+          filtersState.value.searchQuery = parsed.searchQuery || "";
+        } catch (error) {
+          console.error("Error loading filters from localStorage:", error);
+        }
+      }
     }
-
-    filteredTracks.value = tracks.value.filter((track) => {
-      const authorMatch =
-        filters.authors?.length === 0 || filters.authors.includes(track.author);
-
-      const trackYear = track.release_date
-        ? new Date(track.release_date).getFullYear()
-        : null;
-      const yearMatch =
-        filters.years?.length === 0 ||
-        (trackYear && filters.years.includes(trackYear));
-
-      const genreMatch =
-        filters.genres?.length === 0 || filters.genres.includes(track.genre);
-
-      return authorMatch && yearMatch && genreMatch;
-    });
   };
 
-  const searchTracks = async (query) => {
-    if (!query.trim()) {
-      await fetchTracks();
-      return;
+  const saveFiltersToStorage = () => {
+    if (import.meta.client) {
+      try {
+        localStorage.setItem(
+          "filtersState",
+          JSON.stringify(filtersState.value)
+        );
+      } catch (error) {
+        console.error("Error saving filters to localStorage:", error);
+      }
     }
+  };
 
-    loading.value = true;
-    try {
-      const searchResults = tracks.value.filter(
+  const applyFilters = () => {
+    let result = [...tracks.value];
+
+    if (filtersState.value.searchQuery.trim()) {
+      const query = filtersState.value.searchQuery.toLowerCase();
+      result = result.filter(
         (track) =>
-          track.title?.toLowerCase().includes(query.toLowerCase()) ||
-          track.author?.toLowerCase().includes(query.toLowerCase()) ||
-          track.album?.toLowerCase().includes(query.toLowerCase()) ||
-          track.genre?.toLowerCase().includes(query.toLowerCase())
+          track.title?.toLowerCase().includes(query) ||
+          track.author?.toLowerCase().includes(query) ||
+          track.album?.toLowerCase().includes(query) ||
+          track.genre?.toLowerCase().includes(query)
       );
-      filteredTracks.value = searchResults;
-    } catch (e) {
-      error.value = "Ошибка при поиске треков";
-      console.error("Ошибка поиска:", e);
-    } finally {
-      loading.value = false;
     }
+
+    const { authors, years, genres } = filtersState.value.activeFilters;
+
+    if (authors.length > 0) {
+      result = result.filter((track) => authors.includes(track.author));
+    }
+
+    if (years.length > 0) {
+      result = result.filter((track) => {
+        const trackYear = track.release_date
+          ? new Date(track.release_date).getFullYear()
+          : null;
+        return trackYear && years.includes(trackYear);
+      });
+    }
+
+    if (genres.length > 0) {
+      result = result.filter((track) => genres.includes(track.genre));
+    }
+
+    filteredTracks.value = result;
   };
 
-  const clearFilters = () => {
-    currentFilters.value = {};
-    filteredTracks.value = [...tracks.value];
+  const searchTracks = (query) => {
+    filtersState.value.searchQuery = query;
+    saveFiltersToStorage();
+    applyFilters();
   };
+
+  const handleFilterChange = (filters) => {
+    filtersState.value.activeFilters = { ...filters };
+    saveFiltersToStorage();
+    applyFilters();
+  };
+
+  const clearAllFilters = () => {
+    filtersState.value.activeFilters = {
+      authors: [],
+      years: [],
+      genres: [],
+    };
+    filtersState.value.searchQuery = "";
+    saveFiltersToStorage();
+    applyFilters();
+  };
+
+  const hasActiveFilters = computed(() => {
+    const { authors, years, genres } = filtersState.value.activeFilters;
+    return authors.length > 0 || years.length > 0 || genres.length > 0;
+  });
+
+  const getActiveFiltersCount = computed(() => {
+    const { authors, years, genres } = filtersState.value.activeFilters;
+    return authors.length + years.length + genres.length;
+  });
 
   return {
     tracks: readonly(tracks),
     filteredTracks: readonly(filteredTracks),
     loading: readonly(loading),
     error: readonly(error),
-    currentFilters: readonly(currentFilters),
+    filtersState: readonly(filtersState),
+    hasActiveFilters: readonly(hasActiveFilters),
+    getActiveFiltersCount: readonly(getActiveFiltersCount),
     fetchTracks,
     formatDuration,
-    applyFilters,
+    applyFilters: handleFilterChange,
     searchTracks,
-    clearFilters,
+    clearAllFilters,
   };
 };

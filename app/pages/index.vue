@@ -22,7 +22,7 @@
     </div>
 
     <div v-else-if="error" class="error-state">
-      <div class="error-icon">⚠️</div>
+      <div class="error-icon" />
       <p class="error-text">{{ error }}</p>
       <button class="retry-button" @click="retryLoading">
         Попробовать снова
@@ -33,140 +33,59 @@
       <FilterControls :tracks="tracks" @filter-change="handleFilterChange" />
 
       <div v-if="hasActiveFilters" class="filters-status">
-        <span class="filters-status__text">Активные фильтры:</span>
-        <span class="filters-status__clear" @click="clearFilters"
-          >Очистить все</span
-        >
+        <span class="filters-status__text">
+          Активные фильтры: {{ getActiveFiltersCount }}
+        </span>
+        <span class="filters-status__clear" @click="clearAllFilters">
+          Очистить все
+        </span>
       </div>
 
-      <div v-if="tracks.length > 0" class="data-source">
-        Загружено с сервера: {{ tracks.length }} треков
+      <div class="data-source">
+        Загружено треков: {{ tracks.length }}
         <span v-if="filteredTracks.length !== tracks.length">
           (отфильтровано: {{ filteredTracks.length }})
         </span>
       </div>
-      <div v-else class="data-source">Используются тестовые данные</div>
 
-      <PlayList v-if="displayTracks.length > 0">
+      <PlayList v-if="filteredTracks.length > 0">
         <AppTrack
-          v-for="track in displayTracks"
+          v-for="track in filteredTracks"
           :key="track.id"
           :track="track"
-          :playlist="displayTracks"
+          :playlist="filteredTracks"
         />
       </PlayList>
 
       <div v-else class="no-tracks">
-        <div class="no-tracks-icon">🎵</div>
+        <div class="no-tracks-icon" />
         <p class="no-tracks-text">Треки не найдены</p>
         <p class="no-tracks-subtext">
           Попробуйте изменить параметры поиска или фильтры
         </p>
+        <button class="clear-filters-btn" @click="clearAllFilters">
+          Очистить фильтры
+        </button>
       </div>
     </template>
   </div>
 </template>
 
 <script setup>
-import { usePlayerStore } from "~/stores/player";
-
-useHead({
-  title: "Главная | Skypro.Music",
-  meta: [
-    {
-      name: "description",
-      content: "Откройте для себя новые треки и создавайте свои плейлисты",
-    },
-  ],
-});
-
-useSeoMeta({
-  title: "Главная | Skypro.Music",
-  description: "Откройте для себя новые треки и создавайте свои плейлисты",
-});
-
-const playerStore = usePlayerStore();
-
 const {
   tracks,
   filteredTracks,
   loading,
   error,
   fetchTracks,
+  searchTracks,
+  clearAllFilters,
+  hasActiveFilters,
+  getActiveFiltersCount,
   applyFilters,
-  clearFilters,
-  currentFilters,
 } = useTracks();
+
 const searchQuery = ref("");
-
-const fallbackTracks = ref([
-  {
-    id: 1,
-    title: "Guilt",
-    subtitle: "",
-    author: "Nero",
-    album: "Welcome Reality",
-    duration: "4:44",
-    genre: "Electronic",
-    release_date: "2011-08-12",
-  },
-  {
-    id: 2,
-    title: "Elektro",
-    subtitle: "",
-    author: "Dynoro, Outwork, Mr. Gee",
-    album: "Elektro",
-    duration: "2:22",
-    genre: "House",
-    release_date: "2018-05-20",
-  },
-  {
-    id: 3,
-    title: "I'm Fire",
-    subtitle: "",
-    author: "Ali Bakgor",
-    album: "I'm Fire",
-    duration: "2:22",
-    genre: "Pop",
-    release_date: "2019-03-15",
-  },
-  {
-    id: 4,
-    title: "Runaway",
-    subtitle: "",
-    author: "Nero",
-    album: "Welcome Reality",
-    duration: "4:05",
-    genre: "Electronic",
-    release_date: "2011-08-12",
-  },
-  {
-    id: 5,
-    title: "Must Be The Love",
-    subtitle: "",
-    author: "Dynoro",
-    album: "Greatest Hits",
-    duration: "3:15",
-    genre: "Dance",
-    release_date: "2020-11-30",
-  },
-]);
-
-const displayTracks = computed(() => {
-  return filteredTracks.value.length > 0
-    ? filteredTracks.value
-    : tracks.value.length > 0
-    ? tracks.value
-    : fallbackTracks.value;
-});
-
-watch([tracks, filteredTracks], () => {
-  const tracksToUse =
-    filteredTracks.value.length > 0 ? filteredTracks.value : tracks.value;
-  if (tracksToUse.length > 0) {
-    playerStore.setPlaylist(tracksToUse);
-  }
-});
 
 let searchTimeout = null;
 
@@ -176,55 +95,13 @@ const handleSearch = () => {
   }
 
   searchTimeout = setTimeout(() => {
-    if (!searchQuery.value.trim()) {
-      fetchTracks();
-      return;
-    }
-
-    loading.value = true;
-    try {
-      const searchResults = tracks.value.filter(
-        (track) =>
-          track.title
-            ?.toLowerCase()
-            .includes(searchQuery.value.toLowerCase()) ||
-          track.author
-            ?.toLowerCase()
-            .includes(searchQuery.value.toLowerCase()) ||
-          track.album
-            ?.toLowerCase()
-            .includes(searchQuery.value.toLowerCase()) ||
-          track.genre?.toLowerCase().includes(searchQuery.value.toLowerCase())
-      );
-      filteredTracks.value = searchResults;
-
-      if (searchResults.length > 0) {
-        playerStore.setPlaylist(searchResults);
-      }
-    } catch (e) {
-      console.error("Ошибка поиска:", e);
-    } finally {
-      loading.value = false;
-    }
+    searchTracks(searchQuery.value);
   }, 300);
 };
 
 const handleFilterChange = (filters) => {
   applyFilters(filters);
-  const tracksToUse =
-    filteredTracks.value.length > 0 ? filteredTracks.value : tracks.value;
-  if (tracksToUse.length > 0) {
-    playerStore.setPlaylist(tracksToUse);
-  }
 };
-
-const hasActiveFilters = computed(() => {
-  return (
-    currentFilters.value.authors?.length > 0 ||
-    currentFilters.value.years?.length > 0 ||
-    currentFilters.value.genres?.length > 0
-  );
-});
 
 const retryLoading = () => {
   error.value = null;
@@ -276,21 +153,50 @@ onMounted(() => {
   color: #ffffff;
 }
 
-.search__text:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.filters-status {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background: rgba(182, 114, 255, 0.1);
+  border-radius: 8px;
+  border: 1px solid #b672ff;
 }
 
-.search__text::placeholder {
-  background-color: transparent;
+.filters-status__text {
   color: #ffffff;
-  font-style: normal;
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 24px;
+  font-size: 14px;
 }
 
-.loading-state {
+.filters-status__clear {
+  color: #b672ff;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.filters-status__clear:hover {
+  color: #ffffff;
+}
+
+.clear-filters-btn {
+  padding: 10px 20px;
+  background: #b672ff;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+.clear-filters-btn:hover {
+  background: #9a5cd6;
+}
+
+.loading-state,
+.error-state,
+.no-tracks {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -325,20 +231,9 @@ onMounted(() => {
 }
 
 .error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  text-align: center;
   background: rgba(255, 107, 107, 0.1);
   border-radius: 12px;
   border: 1px solid #ff6b6b;
-}
-
-.error-icon {
-  font-size: 48px;
-  margin-bottom: 20px;
 }
 
 .error-text {
@@ -362,15 +257,6 @@ onMounted(() => {
 
 .retry-button:hover {
   background: #9a5cd6;
-}
-
-.no-tracks {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 20px;
-  text-align: center;
 }
 
 .no-tracks-icon {
@@ -398,32 +284,5 @@ onMounted(() => {
   padding: 8px 12px;
   background: rgba(105, 105, 105, 0.1);
   border-radius: 6px;
-}
-
-.filters-status {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 20px;
-  padding: 12px 16px;
-  background: rgba(182, 114, 255, 0.1);
-  border-radius: 8px;
-  border: 1px solid #b672ff;
-}
-
-.filters-status__text {
-  color: #ffffff;
-  font-size: 14px;
-}
-
-.filters-status__clear {
-  color: #b672ff;
-  font-size: 14px;
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-.filters-status__clear:hover {
-  color: #ffffff;
 }
 </style>

@@ -2,8 +2,8 @@
   <BaseFilter
     :is-open="isOpen"
     :items="genres"
-    :selected-items="selectedGenres"
-    @update:selected-items="$emit('update:selectedGenres', $event)"
+    :selected-items="selectedItems"
+    @update:selected-items="$emit('update:selected-items', $event)"
     @apply="$emit('apply')"
   />
 </template>
@@ -18,13 +18,13 @@ defineProps({
     type: Array,
     default: () => [],
   },
-  selectedGenres: {
+  selectedItems: {
     type: Array,
     default: () => [],
   },
 });
 
-defineEmits(["update:selectedGenres", "apply"]);
+defineEmits(["update:selected-items", "apply"]);
 </script>
 
 <style scoped>

@@ -14,8 +14,8 @@
         <AuthorFilter
           :is-open="activeFilter === 'author'"
           :authors="uniqueAuthors"
-          :selected-authors="filters.authors"
-          @update:selected-authors="updateAuthors"
+          :selected-items="filtersState.activeFilters.authors"
+          @update:selected-items="updateFilter('authors', $event)"
           @apply="applyFilters"
         />
       </div>
@@ -31,8 +31,8 @@
         <YearFilter
           :is-open="activeFilter === 'year'"
           :years="uniqueYears"
-          :selected-years="filters.years"
-          @update:selected-years="updateYears"
+          :selected-items="filtersState.activeFilters.years"
+          @update:selected-items="updateFilter('years', $event)"
           @apply="applyFilters"
         />
       </div>
@@ -48,8 +48,8 @@
         <GenreFilter
           :is-open="activeFilter === 'genre'"
           :genres="uniqueGenres"
-          :selected-genres="filters.genres"
-          @update:selected-genres="updateGenres"
+          :selected-items="filtersState.activeFilters.genres"
+          @update:selected-items="updateFilter('genres', $event)"
           @apply="applyFilters"
         />
       </div>
@@ -58,6 +58,8 @@
 </template>
 
 <script setup>
+const { filtersState, applyFilters } = useTracks();
+
 const props = defineProps({
   tracks: {
     type: Array,
@@ -68,11 +70,6 @@ const props = defineProps({
 const emit = defineEmits(["filter-change"]);
 
 const activeFilter = ref(null);
-const filters = ref({
-  authors: [],
-  years: [],
-  genres: [],
-});
 
 const uniqueAuthors = computed(() => {
   const authors = props.tracks.map((track) => track.author).filter(Boolean);
@@ -110,21 +107,13 @@ const toggleFilter = (filterType) => {
   activeFilter.value = activeFilter.value === filterType ? null : filterType;
 };
 
-const updateAuthors = (authors) => {
-  filters.value.authors = authors;
-};
-
-const updateYears = (years) => {
-  filters.value.years = years;
-};
-
-const updateGenres = (genres) => {
-  filters.value.genres = genres;
-};
-
-const applyFilters = () => {
-  activeFilter.value = null;
-  emit("filter-change", filters.value);
+const updateFilter = (filterType, items) => {
+  const updatedFilters = {
+    ...filtersState.value.activeFilters,
+    [filterType]: items,
+  };
+  applyFilters(updatedFilters);
+  emit("filter-change", updatedFilters);
 };
 
 const onClickOutside = () => {
