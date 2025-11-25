@@ -1,8 +1,12 @@
 <script setup>
+import { usePlayerStore } from "~/stores/player";
+
 useSeoMeta({
   title: "Музыкальный сервис - Главная",
   description: "Слушайте лучшую музыку",
 });
+
+const playerStore = usePlayerStore();
 
 const {
   tracks,
@@ -22,10 +26,10 @@ const fallbackTracks = ref([
     title: "Guilt",
     subtitle: "",
     author: "Nero",
-    album: "Welcome Reality", 
+    album: "Welcome Reality",
     duration: "4:44",
     genre: "Electronic",
-    release_date: "2011-08-12"
+    release_date: "2011-08-12",
   },
   {
     id: 2,
@@ -35,17 +39,17 @@ const fallbackTracks = ref([
     album: "Elektro",
     duration: "2:22",
     genre: "House",
-    release_date: "2018-05-20"
+    release_date: "2018-05-20",
   },
   {
     id: 3,
     title: "I'm Fire",
     subtitle: "",
-    author: "Ali Bakgor", 
+    author: "Ali Bakgor",
     album: "I'm Fire",
     duration: "2:22",
     genre: "Pop",
-    release_date: "2019-03-15"
+    release_date: "2019-03-15",
   },
   {
     id: 4,
@@ -55,7 +59,7 @@ const fallbackTracks = ref([
     album: "Welcome Reality",
     duration: "4:05",
     genre: "Electronic",
-    release_date: "2011-08-12"
+    release_date: "2011-08-12",
   },
   {
     id: 5,
@@ -65,9 +69,9 @@ const fallbackTracks = ref([
     album: "Greatest Hits",
     duration: "3:15",
     genre: "Dance",
-    release_date: "2020-11-30"
-  }
-])
+    release_date: "2020-11-30",
+  },
+]);
 
 const displayTracks = computed(() => {
   return filteredTracks.value.length > 0
@@ -77,31 +81,62 @@ const displayTracks = computed(() => {
     : fallbackTracks.value;
 });
 
-const handleSearch = async () => {
-  if (!searchQuery.value.trim()) {
-    await fetchTracks();
-    return;
+watch([tracks, filteredTracks], () => {
+  const tracksToUse =
+    filteredTracks.value.length > 0 ? filteredTracks.value : tracks.value;
+  if (tracksToUse.length > 0) {
+    playerStore.setPlaylist(tracksToUse);
+  }
+});
+
+let searchTimeout = null;
+
+const handleSearch = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
   }
 
-  loading.value = true;
-  try {
-    const searchResults = tracks.value.filter(
-      (track) =>
-        track.title?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        track.author?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        track.album?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        track.genre?.toLowerCase().includes(searchQuery.value.toLowerCase())
-    );
-    filteredTracks.value = searchResults;
-  } catch (e) {
-    console.error("Ошибка поиска:", e);
-  } finally {
-    loading.value = false;
-  }
+  searchTimeout = setTimeout(() => {
+    if (!searchQuery.value.trim()) {
+      fetchTracks();
+      return;
+    }
+
+    loading.value = true;
+    try {
+      const searchResults = tracks.value.filter(
+        (track) =>
+          track.title
+            ?.toLowerCase()
+            .includes(searchQuery.value.toLowerCase()) ||
+          track.author
+            ?.toLowerCase()
+            .includes(searchQuery.value.toLowerCase()) ||
+          track.album
+            ?.toLowerCase()
+            .includes(searchQuery.value.toLowerCase()) ||
+          track.genre?.toLowerCase().includes(searchQuery.value.toLowerCase())
+      );
+      filteredTracks.value = searchResults;
+
+      if (searchResults.length > 0) {
+        playerStore.setPlaylist(searchResults);
+      }
+    } catch (e) {
+      console.error("Ошибка поиска:", e);
+    } finally {
+      loading.value = false;
+    }
+  }, 300);
 };
 
 const handleFilterChange = (filters) => {
   applyFilters(filters);
+  const tracksToUse =
+    filteredTracks.value.length > 0 ? filteredTracks.value : tracks.value;
+  if (tracksToUse.length > 0) {
+    playerStore.setPlaylist(tracksToUse);
+  }
 };
 
 const hasActiveFilters = computed(() => {
@@ -152,7 +187,7 @@ onMounted(() => {
             </div>
 
             <div v-else-if="error" class="error-state">
-              <div class="error-icon">⚠️</div>
+              <div class="error-icon" />
               <p class="error-text">{{ error }}</p>
               <button class="retry-button" @click="retryLoading">
                 Попробовать снова
@@ -184,16 +219,12 @@ onMounted(() => {
                 <AppTrack
                   v-for="track in displayTracks"
                   :key="track.id"
-                  :title="track.title"
-                  :subtitle="track.subtitle"
-                  :author="track.author"
-                  :album="track.album"
-                  :duration="track.duration"
+                  :track="track"
                 />
               </PlayList>
 
               <div v-else class="no-tracks">
-                <div class="no-tracks-icon">🎵</div>
+                <div class="no-tracks-icon" />
                 <p class="no-tracks-text">Треки не найдены</p>
                 <p class="no-tracks-subtext">
                   Попробуйте изменить параметры поиска или фильтры
@@ -278,6 +309,7 @@ onMounted(() => {
 
 .main__centerblock {
   width: auto;
+  max-width: 50vw;
   flex-grow: 3;
   padding: 20px 40px 20px 111px;
 }

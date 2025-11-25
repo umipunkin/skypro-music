@@ -1,13 +1,13 @@
 <template>
   <div class="centerblock__filter filter">
     <div class="filter__title">Искать по:</div>
-    
+
     <div class="filter__buttons">
       <div class="filter__button-container">
-        <button 
+        <button
           class="filter__button button-author _btn-text"
           :class="{ 'filter__button--active': activeFilter === 'author' }"
-          @click="toggleFilter('author')"
+          @click.stop="toggleFilter('author')"
         >
           исполнителю
         </button>
@@ -19,12 +19,12 @@
           @apply="applyFilters"
         />
       </div>
-      
+
       <div class="filter__button-container">
-        <button 
+        <button
           class="filter__button button-year _btn-text"
           :class="{ 'filter__button--active': activeFilter === 'year' }"
-          @click="toggleFilter('year')"
+          @click.stop="toggleFilter('year')"
         >
           году выпуска
         </button>
@@ -36,12 +36,12 @@
           @apply="applyFilters"
         />
       </div>
-      
+
       <div class="filter__button-container">
-        <button 
+        <button
           class="filter__button button-genre _btn-text"
           :class="{ 'filter__button--active': activeFilter === 'genre' }"
-          @click="toggleFilter('genre')"
+          @click.stop="toggleFilter('genre')"
         >
           жанру
         </button>
@@ -61,81 +61,83 @@
 const props = defineProps({
   tracks: {
     type: Array,
-    default: () => []
-  }
-})
+    default: () => [],
+  },
+});
 
-const emit = defineEmits(['filter-change'])
+const emit = defineEmits(["filter-change"]);
 
-const activeFilter = ref(null)
+const activeFilter = ref(null);
 const filters = ref({
   authors: [],
   years: [],
-  genres: []
-})
+  genres: [],
+});
 
 const uniqueAuthors = computed(() => {
-  const authors = props.tracks.map(track => track.author).filter(Boolean)
-  return [...new Set(authors)].sort()
-})
+  const authors = props.tracks.map((track) => track.author).filter(Boolean);
+  return [...new Set(authors)].sort();
+});
 
 const uniqueYears = computed(() => {
-  const years = props.tracks.map(track => {
-    if (track.release_date) {
-      return new Date(track.release_date).getFullYear()
-    }
-    return null
-  }).filter(year => year !== null)
-  
-  return [...new Set(years)].sort((a, b) => b - a) 
-})
+  const years = props.tracks
+    .map((track) => {
+      if (track.release_date) {
+        return new Date(track.release_date).getFullYear();
+      }
+      return null;
+    })
+    .filter((year) => year !== null);
+
+  return [...new Set(years)].sort((a, b) => b - a);
+});
 
 const uniqueGenres = computed(() => {
-  const genres = props.tracks.map(track => {
-    let genre = track.genre
-    if (Array.isArray(genre)) {
-      genre = genre[0] || 'Неизвестный жанр'
-    }
-    return genre
-  }).filter(Boolean)
-  
-  return [...new Set(genres)].sort()
-})
+  const genres = props.tracks
+    .map((track) => {
+      let genre = track.genre;
+      if (Array.isArray(genre)) {
+        genre = genre[0] || "Неизвестный жанр";
+      }
+      return genre;
+    })
+    .filter(Boolean);
+
+  return [...new Set(genres)].sort();
+});
 
 const toggleFilter = (filterType) => {
-  activeFilter.value = activeFilter.value === filterType ? null : filterType
-}
+  activeFilter.value = activeFilter.value === filterType ? null : filterType;
+};
 
 const updateAuthors = (authors) => {
-  filters.value.authors = authors
-}
+  filters.value.authors = authors;
+};
 
 const updateYears = (years) => {
-  filters.value.years = years
-}
+  filters.value.years = years;
+};
 
 const updateGenres = (genres) => {
-  filters.value.genres = genres
-}
+  filters.value.genres = genres;
+};
 
 const applyFilters = () => {
-  activeFilter.value = null
-  emit('filter-change', filters.value)
-}
+  activeFilter.value = null;
+  emit("filter-change", filters.value);
+};
 
-const onClickOutside = (event) => {
-  if (!event.target.closest('.filter__button-container')) {
-    activeFilter.value = null
-  }
-}
+const onClickOutside = () => {
+  activeFilter.value = null;
+};
 
 onMounted(() => {
-  document.addEventListener('click', onClickOutside)
-})
+  document.addEventListener("click", onClickOutside);
+});
 
 onUnmounted(() => {
-  document.removeEventListener('click', onClickOutside)
-})
+  document.removeEventListener("click", onClickOutside);
+});
 </script>
 
 <style scoped>
@@ -153,7 +155,7 @@ onUnmounted(() => {
   font-size: 16px;
   line-height: 24px;
   margin-right: 15px;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .filter__buttons {
@@ -171,22 +173,22 @@ onUnmounted(() => {
   font-weight: 400;
   font-size: 16px;
   line-height: 24px;
-  border: 1px solid #FFFFFF;
+  border: 1px solid #ffffff;
   border-radius: 60px;
   padding: 6px 20px;
   background: transparent;
-  color: #FFFFFF;
+  color: #ffffff;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .filter__button:hover {
-  border-color: #B672FF;
-  color: #B672FF;
+  border-color: #b672ff;
+  color: #b672ff;
 }
 
 .filter__button--active {
-  border-color: #B672FF;
-  color: #B672FF;
+  border-color: #b672ff;
+  color: #b672ff;
 }
 </style>

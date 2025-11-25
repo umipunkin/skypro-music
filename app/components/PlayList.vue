@@ -22,6 +22,15 @@
 .centerblock__content {
   display: flex;
   flex-direction: column;
+  max-height: calc(100vh - 460px);
+  overflow-y: scroll;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.centerblock__content::-webkit-scrollbar {
+      width: 0;
+      height: 0;
 }
 
 .content__title {
@@ -35,7 +44,6 @@
 .content__playlist {
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
 }
 
 .playlist-title__col {

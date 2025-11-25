@@ -1,30 +1,15 @@
 <template>
-  <div v-if="isOpen" class="filter__dropdown dropdown">
-    <div class="dropdown__content">
-      <div class="dropdown__list">
-        <div
-          v-for="year in years"
-          :key="year"
-          class="dropdown__item"
-          :class="{ 'dropdown__item--active': selectedYears.includes(year) }"
-          @click="toggleYear(year)"
-        >
-          <span class="dropdown__text">{{ year }}</span>
-          <span class="dropdown__checkbox" />
-        </div>
-      </div>
-      <div class="dropdown__actions">
-        <button class="dropdown__clear" @click="clearSelection">
-          Очистить
-        </button>
-        <button class="dropdown__apply" @click="applyFilters">Применить</button>
-      </div>
-    </div>
-  </div>
+  <BaseFilter
+    :is-open="isOpen"
+    :items="years"
+    :selected-items="selectedYears"
+    @update:selected-items="$emit('update:selectedYears', $event)"
+    @apply="$emit('apply')"
+  />
 </template>
 
 <script setup>
-const props = defineProps({
+defineProps({
   isOpen: {
     type: Boolean,
     default: false,
@@ -39,22 +24,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["update:selectedYears", "apply"]);
-
-const toggleYear = (year) => {
-  const updated = props.selectedYears.includes(year)
-    ? props.selectedYears.filter((y) => y !== year)
-    : [...props.selectedYears, year];
-  emit("update:selectedYears", updated);
-};
-
-const clearSelection = () => {
-  emit("update:selectedYears", []);
-};
-
-const applyFilters = () => {
-  emit("apply");
-};
+defineEmits(["update:selectedYears", "apply"]);
 </script>
 
 <style scoped>
