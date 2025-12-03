@@ -21,9 +21,14 @@
         <a class="track__album-link" href="#">{{ track.album }}</a>
       </div>
       <div class="track__time">
-        <svg class="track__time-svg">
-          <use xlink:href="/img/icon/sprite.svg#icon-like" />
-        </svg>
+        <button class="favorite-btn" @click.stop="toggleFavorite">
+          <svg
+            class="track__time-svg"
+            :class="{ 'favorite-active': isTrackFavorite }"
+          >
+            <use xlink:href="/img/icon/sprite.svg#icon-like" />
+          </svg>
+        </button>
         <span class="track__time-text">{{ track.duration }}</span>
       </div>
     </div>
@@ -31,18 +36,70 @@
 </template>
 
 <script setup>
-const { track } = defineProps({
+import { usePlayerStore } from "~/stores/player";
+
+const playerStore = usePlayerStore();
+
+const { track, playlist } = defineProps({
   track: {
     type: Object,
     default: () => ({}),
+  },
+  playlist: {
+    type: Array,
+    default: () => [],
   },
 });
 
 const { playTrack } = useAudioPlayer();
 
+const favoriteTracks = ref([]);
+
+const loadFavorites = () => {
+  if (import.meta.client) {
+    const saved = localStorage.getItem("favoriteTracks");
+    if (saved) {
+      favoriteTracks.value = JSON.parse(saved);
+    }
+  }
+};
+
+const saveFavorites = () => {
+  if (import.meta.client) {
+    localStorage.setItem(
+      "favoriteTracks",
+      JSON.stringify(favoriteTracks.value)
+    );
+  }
+};
+
+const isTrackFavorite = computed(() => {
+  return favoriteTracks.value.some((fav) => fav.id === track.id);
+});
+
+const toggleFavorite = () => {
+  if (isTrackFavorite.value) {
+    const index = favoriteTracks.value.findIndex((fav) => fav.id === track.id);
+    favoriteTracks.value.splice(index, 1);
+  } else {
+    favoriteTracks.value.push(track);
+  }
+  saveFavorites();
+};
+
 const onPlay = () => {
+  if (playlist && playlist.length > 0) {
+    playerStore.setPlaylist(playlist);
+  } else if (!playerStore.playlist.some((t) => t.id === track.id)) {
+    playerStore.setPlaylist([track]);
+  }
+
   playTrack(track);
 };
+
+onMounted(() => {
+  loadFavorites();
+});
 </script>
 
 <style scoped>
@@ -135,17 +192,34 @@ const onPlay = () => {
 
 .track__time {
   display: flex;
-  flex-wrap: nowrap;
   align-items: center;
-  justify-content: center;
+  gap: 10px;
+}
+
+.favorite-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
 }
 
 .track__time-svg {
   width: 14px;
   height: 12px;
-  margin-right: 17px;
   fill: transparent;
   stroke: #696969;
+  transition: all 0.3s ease;
+}
+
+.track__time-svg:hover {
+  stroke: #acacac;
+}
+
+.favorite-active {
+  fill: #b672ff !important;
+  stroke: #b672ff !important;
 }
 
 .track__time-text {

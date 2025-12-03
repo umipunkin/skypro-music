@@ -1,7 +1,7 @@
 <template>
   <nav class="main__nav nav">
     <div class="nav__logo logo">
-      <img class="logo__image" src="/img/logo.png" alt="Логотип" >
+      <img class="logo__image" src="/img/logo.png" alt="Skypro Music" >
     </div>
 
     <div class="nav__burger burger" @click="toggleMenu">
@@ -16,7 +16,12 @@
           <NuxtLink to="/" class="menu__link">Главное</NuxtLink>
         </li>
         <li class="menu__item">
-          <a href="#" class="menu__link">Мой плейлист</a>
+          <NuxtLink to="/favorites" class="menu__link">Мой плейлист</NuxtLink>
+        </li>
+        <li class="menu__item">
+          <NuxtLink to="/category/electronic" class="menu__link"
+            >Категории</NuxtLink
+          >
         </li>
         <li class="menu__item">
           <NuxtLink to="/signin" class="menu__link">Войти</NuxtLink>
@@ -26,7 +31,7 @@
   </nav>
 </template>
 
-<script setup lang="ts">
+<script setup>
 const isMenuVisible = ref(true);
 
 const toggleMenu = () => {
