@@ -31,12 +31,20 @@
                 <use xlink:href="/img/icon/sprite.svg#icon-next" />
               </svg>
             </div>
-            <div class="player__btn-repeat _btn-icon">
+            <div
+              class="player__btn-repeat _btn-icon"
+              :class="{ 'player__btn-repeat--active': playerStore.isRepeat }"
+              @click="playerStore.toggleRepeat()"
+            >
               <svg class="player__btn-repeat-svg">
                 <use xlink:href="/img/icon/sprite.svg#icon-repeat" />
               </svg>
             </div>
-            <div class="player__btn-shuffle _btn-icon">
+            <div
+              class="player__btn-shuffle _btn-icon"
+              :class="{ 'player__btn-shuffle--active': playerStore.isShuffle }"
+              @click="handleShuffleClick"
+            >
               <svg class="player__btn-shuffle-svg">
                 <use xlink:href="/img/icon/sprite.svg#icon-shuffle" />
               </svg>
@@ -132,6 +140,27 @@ const handlePlay = () => {
   }
 };
 
+const handleShuffleClick = async () => {
+  const wasShuffle = playerStore.isShuffle;
+
+  playerStore.toggleShuffle();
+
+  if (!wasShuffle && playerStore.isShuffle) {
+    const randomTrack = playerStore.getRandomTrack();
+    if (randomTrack) {
+      await playTrack(randomTrack);
+    }
+  }
+};
+
+const handlePrevTrack = () => {
+  prevTrack();
+};
+
+const handleNextTrack = () => {
+  nextTrack();
+};
+
 const selectTrack = () => {};
 
 const handleProgressClick = (event) => {
@@ -159,19 +188,18 @@ const handleTimeUpdate = () => {
 
 const handleTrackEnd = () => {
   handleTrackEndComposable();
-  handleNextTrack();
+
+  if (playerStore.isRepeat) {
+    if (playerStore.currentTrack) {
+      playTrack(playerStore.currentTrack);
+    }
+  } else {
+    handleNextTrack();
+  }
 };
 
 const updateVolume = () => {
   updateVolumeComposable();
-};
-
-const handlePrevTrack = () => {
-  prevTrack();
-};
-
-const handleNextTrack = () => {
-  nextTrack();
 };
 </script>
 
@@ -283,6 +311,11 @@ const handleNextTrack = () => {
   stroke: #696969;
 }
 
+.player__btn-repeat--active svg {
+  fill: #b672ff !important;
+  stroke: #b672ff !important;
+}
+
 .player__btn-shuffle {
   display: flex;
   align-items: center;
@@ -293,6 +326,11 @@ const handleNextTrack = () => {
   height: 12px;
   fill: transparent;
   stroke: #696969;
+}
+
+.player__btn-shuffle--active svg {
+  fill: #b672ff !important;
+  stroke: #b672ff !important;
 }
 
 .player__track-play {
