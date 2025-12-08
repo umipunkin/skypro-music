@@ -5,7 +5,12 @@
         <form class="modal__form-login" @submit.prevent="handleSubmit">
           <NuxtLink to="/">
             <div class="modal__logo">
-              <img src="/img/logo_modal.png" alt="logo" >
+              <NuxtImg 
+                src="/img/logo_modal.png" 
+                alt="logo" 
+                width="140" 
+                height="21"
+              />
             </div>
           </NuxtLink>
 
@@ -249,3 +254,6 @@ const handleSubmit = async () => {
   height: 62px;
 }
 </style>
+
+
+

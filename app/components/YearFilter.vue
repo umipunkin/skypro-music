@@ -40,6 +40,7 @@ defineEmits(["update:selected-items", "apply"]);
   overflow-y: auto;
   z-index: 1000;
   margin-top: 10px;
+  scrollbar-width: none;
 }
 
 .dropdown__list {

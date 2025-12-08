@@ -28,6 +28,8 @@ defineEmits(["update:selected-items", "apply"]);
 </script>
 
 <style scoped>
+
+
 .filter__dropdown {
   position: absolute;
   top: 100%;
@@ -40,6 +42,7 @@ defineEmits(["update:selected-items", "apply"]);
   overflow-y: auto;
   z-index: 1000;
   margin-top: 10px;
+  scrollbar-width: none;
 }
 
 .dropdown__list {
