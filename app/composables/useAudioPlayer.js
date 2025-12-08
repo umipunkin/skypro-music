@@ -64,8 +64,6 @@ export function useAudioPlayer() {
 
       await playerStore.audioRef.play();
       playerStore.setPlaying(true);
-
-      console.log("Трек начал играть:", track.title);
     } catch (error) {
       console.error("Ошибка воспроизведения трека:", error);
       playerStore.setPlaying(false);
@@ -122,20 +120,14 @@ export function useAudioPlayer() {
 
     if (prev) {
       await playTrack(prev);
-    } else {
-      console.log("Предыдущий трек не найден");
     }
   };
 
   const nextTrack = async () => {
-    console.log("nextTrack вызван");
     const next = playerStore.goToNextTrack();
-    console.log("Получен следующий трек:", next?.title);
 
     if (next) {
       await playTrack(next);
-    } else {
-      console.log("Следующий трек не найден");
     }
   };
 

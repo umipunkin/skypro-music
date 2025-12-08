@@ -4,16 +4,21 @@ export const usePlayerStore = defineStore("player", {
   state: () => ({
     currentTrack: null,
     playlist: [],
+    originalPlaylist: [],
     isPlaying: false,
     progress: 0,
     volume: 50,
     audioRef: null,
     isShuffle: false,
-    isRepeat: false,
+    loopMode: "off",
   }),
 
   getters: {
     hasTracks: (state) => state.playlist.length > 0,
+
+    isLoopOff: (state) => state.loopMode === "off",
+    isLoopOne: (state) => state.loopMode === "one",
+    isLoopAll: (state) => state.loopMode === "all",
   },
 
   actions: {
@@ -22,7 +27,7 @@ export const usePlayerStore = defineStore("player", {
     },
 
     setPlaylist(tracks) {
-      this.playlist = tracks;
+      this.playlist = [...tracks];
       this.originalPlaylist = [...tracks];
     },
 
@@ -70,17 +75,30 @@ export const usePlayerStore = defineStore("player", {
       if (availableTracks.length === 0) return null;
 
       const randomIndex = Math.floor(Math.random() * availableTracks.length);
+
       return availableTracks[randomIndex];
     },
 
-    toggleRepeat() {
-      this.isRepeat = !this.isRepeat;
+    toggleLoop() {
+      const loopModes = ["off", "one", "all"];
+      const currentIndex = loopModes.indexOf(this.loopMode);
+      const nextIndex = (currentIndex + 1) % loopModes.length;
+      this.loopMode = loopModes[nextIndex];
+
+      return this.loopMode;
+    },
+
+    setLoopMode(mode) {
+      const validModes = ["off", "one", "all"];
+      if (validModes.includes(mode)) {
+        this.loopMode = mode;
+      }
     },
 
     getNextTrack() {
       if (this.playlist.length === 0) return null;
 
-      if (this.isRepeat && this.currentTrack) {
+      if (this.loopMode === "one" && this.currentTrack) {
         return this.currentTrack;
       }
 
@@ -101,7 +119,17 @@ export const usePlayerStore = defineStore("player", {
         return this.playlist[0];
       }
 
-      const nextIndex = (currentIndex + 1) % this.playlist.length;
+      let nextIndex;
+      if (currentIndex === this.playlist.length - 1) {
+        if (this.loopMode === "all") {
+          nextIndex = 0;
+        } else {
+          return null;
+        }
+      } else {
+        nextIndex = currentIndex + 1;
+      }
+
       return this.playlist[nextIndex];
     },
 
@@ -125,8 +153,17 @@ export const usePlayerStore = defineStore("player", {
         return this.playlist[this.playlist.length - 1];
       }
 
-      const prevIndex =
-        currentIndex === 0 ? this.playlist.length - 1 : currentIndex - 1;
+      let prevIndex;
+      if (currentIndex === 0) {
+        if (this.loopMode === "all") {
+          prevIndex = this.playlist.length - 1;
+        } else {
+          return null;
+        }
+      } else {
+        prevIndex = currentIndex - 1;
+      }
+
       return this.playlist[prevIndex];
     },
 
@@ -145,6 +182,25 @@ export const usePlayerStore = defineStore("player", {
         this.setCurrentTrack(prevTrack);
         return prevTrack;
       }
+      return null;
+    },
+
+    handleTrackEnd() {
+      if (this.loopMode === "one") {
+        return this.currentTrack;
+      }
+
+      const nextTrack = this.getNextTrack();
+      if (nextTrack) {
+        this.setCurrentTrack(nextTrack);
+        return nextTrack;
+      }
+
+      if (this.loopMode !== "all") {
+        this.setPlaying(false);
+        this.setProgress(100);
+      }
+
       return null;
     },
 
