@@ -1,15 +1,25 @@
-
 import { defineStore } from "pinia";
 
 export const usePlayerStore = defineStore("player", {
   state: () => ({
     currentTrack: null,
     playlist: [],
+    originalPlaylist: [],
     isPlaying: false,
     progress: 0,
     volume: 50,
     audioRef: null,
+    isShuffle: false,
+    loopMode: "off",
   }),
+
+  getters: {
+    hasTracks: (state) => state.playlist.length > 0,
+
+    isLoopOff: (state) => state.loopMode === "off",
+    isLoopOne: (state) => state.loopMode === "one",
+    isLoopAll: (state) => state.loopMode === "all",
+  },
 
   actions: {
     setCurrentTrack(track) {
@@ -17,7 +27,8 @@ export const usePlayerStore = defineStore("player", {
     },
 
     setPlaylist(tracks) {
-      this.playlist = tracks;
+      this.playlist = [...tracks];
+      this.originalPlaylist = [...tracks];
     },
 
     setProgress(progress) {
@@ -37,6 +48,192 @@ export const usePlayerStore = defineStore("player", {
       if (this.audioRef) {
         this.audioRef.volume = this.volume / 100;
       }
+    },
+
+    toggleShuffle() {
+      this.isShuffle = !this.isShuffle;
+
+      if (this.isShuffle) {
+        if (this.originalPlaylist.length === 0) {
+          this.originalPlaylist = [...this.playlist];
+        }
+      } else {
+        if (this.originalPlaylist.length > 0) {
+          this.playlist = [...this.originalPlaylist];
+        }
+      }
+    },
+
+    getRandomTrack() {
+      if (this.playlist.length === 0) return null;
+      if (this.playlist.length === 1) return this.playlist[0];
+
+      const availableTracks = this.currentTrack
+        ? this.playlist.filter((track) => track.id !== this.currentTrack.id)
+        : [...this.playlist];
+
+      if (availableTracks.length === 0) return null;
+
+      const randomIndex = Math.floor(Math.random() * availableTracks.length);
+
+      return availableTracks[randomIndex];
+    },
+
+    toggleLoop() {
+      const loopModes = ["off", "one", "all"];
+      const currentIndex = loopModes.indexOf(this.loopMode);
+      const nextIndex = (currentIndex + 1) % loopModes.length;
+      this.loopMode = loopModes[nextIndex];
+
+      return this.loopMode;
+    },
+
+    setLoopMode(mode) {
+      const validModes = ["off", "one", "all"];
+      if (validModes.includes(mode)) {
+        this.loopMode = mode;
+      }
+    },
+
+    getNextTrack() {
+      if (this.playlist.length === 0) return null;
+
+      if (this.loopMode === "one" && this.currentTrack) {
+        return this.currentTrack;
+      }
+
+      if (this.isShuffle) {
+        const randomTrack = this.getRandomTrack();
+        return randomTrack || this.playlist[0];
+      }
+
+      if (!this.currentTrack) {
+        return this.playlist[0];
+      }
+
+      const currentIndex = this.playlist.findIndex(
+        (track) => track.id === this.currentTrack.id
+      );
+
+      if (currentIndex === -1) {
+        return this.playlist[0];
+      }
+
+      let nextIndex;
+      if (currentIndex === this.playlist.length - 1) {
+        if (this.loopMode === "all") {
+          nextIndex = 0;
+        } else {
+          return null;
+        }
+      } else {
+        nextIndex = currentIndex + 1;
+      }
+
+      return this.playlist[nextIndex];
+    },
+
+    getPrevTrack() {
+      if (this.playlist.length === 0) return null;
+
+      if (this.isShuffle) {
+        const randomTrack = this.getRandomTrack();
+        return randomTrack || this.playlist[0];
+      }
+
+      if (!this.currentTrack) {
+        return this.playlist[this.playlist.length - 1];
+      }
+
+      const currentIndex = this.playlist.findIndex(
+        (track) => track.id === this.currentTrack.id
+      );
+
+      if (currentIndex === -1) {
+        return this.playlist[this.playlist.length - 1];
+      }
+
+      let prevIndex;
+      if (currentIndex === 0) {
+        if (this.loopMode === "all") {
+          prevIndex = this.playlist.length - 1;
+        } else {
+          return null;
+        }
+      } else {
+        prevIndex = currentIndex - 1;
+      }
+
+      return this.playlist[prevIndex];
+    },
+
+    goToNextTrack() {
+      const nextTrack = this.getNextTrack();
+      if (nextTrack) {
+        this.setCurrentTrack(nextTrack);
+        return nextTrack;
+      }
+      return null;
+    },
+
+    goToPrevTrack() {
+      const prevTrack = this.getPrevTrack();
+      if (prevTrack) {
+        this.setCurrentTrack(prevTrack);
+        return prevTrack;
+      }
+      return null;
+    },
+
+    handleTrackEnd() {
+      if (this.loopMode === "one") {
+        return this.currentTrack;
+      }
+
+      const nextTrack = this.getNextTrack();
+      if (nextTrack) {
+        this.setCurrentTrack(nextTrack);
+        return nextTrack;
+      }
+
+      if (this.loopMode !== "all") {
+        this.setPlaying(false);
+        this.setProgress(100);
+      }
+
+      return null;
+    },
+
+    addToPlaylist(track) {
+      if (!this.playlist.some((t) => t.id === track.id)) {
+        this.playlist.push(track);
+        this.originalPlaylist.push(track);
+      }
+    },
+
+    removeFromPlaylist(trackId) {
+      const index = this.playlist.findIndex((track) => track.id === trackId);
+      if (index !== -1) {
+        this.playlist.splice(index, 1);
+        this.originalPlaylist = this.originalPlaylist.filter(
+          (track) => track.id !== trackId
+        );
+
+        if (this.currentTrack && this.currentTrack.id === trackId) {
+          if (this.playlist.length > 0) {
+            this.setCurrentTrack(this.playlist[0]);
+          } else {
+            this.setCurrentTrack(null);
+          }
+        }
+      }
+    },
+
+    clearPlaylist() {
+      this.playlist = [];
+      this.originalPlaylist = [];
+      this.currentTrack = null;
+      this.isPlaying = false;
     },
   },
 });

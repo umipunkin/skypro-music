@@ -1,7 +1,14 @@
 <template>
   <nav class="main__nav nav">
     <div class="nav__logo logo">
-      <img class="logo__image" src="/img/logo.png" alt="Skypro Music" >
+      <NuxtImg
+        class="logo__image"
+        src="/img/logo.png"
+        alt="Skypro Music"
+        width="113"
+        height="17"
+        loading="lazy"
+      />
     </div>
 
     <div class="nav__burger burger" @click="toggleMenu">

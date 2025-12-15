@@ -31,12 +31,27 @@
                 <use xlink:href="/img/icon/sprite.svg#icon-next" />
               </svg>
             </div>
-            <div class="player__btn-repeat _btn-icon">
-              <svg class="player__btn-repeat-svg">
+            <div
+              class="player__btn-loop _btn-icon"
+              :class="{
+                'player__btn-loop--one': playerStore.isLoopOne,
+                'player__btn-loop--all': playerStore.isLoopAll,
+              }"
+              :title="loopTitle"
+              @click="handleLoopClick"
+            >
+              <svg class="player__btn-loop-svg">
                 <use xlink:href="/img/icon/sprite.svg#icon-repeat" />
               </svg>
+              <span v-if="playerStore.isLoopAll" class="loop-all-indicator"
+                >ALL</span
+              >
             </div>
-            <div class="player__btn-shuffle _btn-icon">
+            <div
+              class="player__btn-shuffle _btn-icon"
+              :class="{ 'player__btn-shuffle--active': playerStore.isShuffle }"
+              @click="handleShuffleClick"
+            >
               <svg class="player__btn-shuffle-svg">
                 <use xlink:href="/img/icon/sprite.svg#icon-shuffle" />
               </svg>
@@ -116,6 +131,19 @@ const {
   nextTrack,
 } = useAudioPlayer();
 
+const loopTitle = computed(() => {
+  switch (playerStore.loopMode) {
+    case "off":
+      return "Зацикливание выключено";
+    case "one":
+      return "Повтор текущего трека";
+    case "all":
+      return "Зацикливание всего плейлиста";
+    default:
+      return "Зацикливание";
+  }
+});
+
 onMounted(() => {
   if (audioRef.value) {
     initPlayer(audioRef.value);
@@ -130,6 +158,31 @@ const handlePlay = () => {
       playTrack(playerStore.playlist[0]);
     }
   }
+};
+
+const handleShuffleClick = async () => {
+  const wasShuffle = playerStore.isShuffle;
+
+  playerStore.toggleShuffle();
+
+  if (!wasShuffle && playerStore.isShuffle) {
+    const randomTrack = playerStore.getRandomTrack();
+    if (randomTrack) {
+      await playTrack(randomTrack);
+    }
+  }
+};
+
+const handleLoopClick = () => {
+  playerStore.toggleLoop();
+};
+
+const handlePrevTrack = () => {
+  prevTrack();
+};
+
+const handleNextTrack = () => {
+  nextTrack();
 };
 
 const selectTrack = () => {};
@@ -158,24 +211,73 @@ const handleTimeUpdate = () => {
 };
 
 const handleTrackEnd = () => {
-  handleTrackEndComposable();
-  handleNextTrack();
+  const nextTrack = playerStore.handleTrackEnd();
+
+  if (nextTrack) {
+    playTrack(nextTrack);
+  } else {
+    handleTrackEndComposable();
+  }
 };
 
 const updateVolume = () => {
   updateVolumeComposable();
 };
-
-const handlePrevTrack = () => {
-  prevTrack();
-};
-
-const handleNextTrack = () => {
-  nextTrack();
-};
 </script>
 
 <style scoped>
+.player__btn-loop {
+  margin-right: 24px;
+  position: relative;
+}
+
+.player__btn-loop-svg {
+  width: 18px;
+  height: 30px;
+  margin-top: 5px;
+  fill: transparent;
+  stroke: #696969;
+}
+
+.player__btn-loop--one svg {
+  fill: #b672ff !important;
+  stroke: #b672ff !important;
+}
+
+.player__btn-loop--all svg {
+  fill: #b672ff !important;
+  stroke: #b672ff !important;
+}
+
+.loop-all-indicator {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #b672ff;
+  color: white;
+  font-size: 8px;
+  padding: 1px 3px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.player__btn-shuffle {
+  display: flex;
+  align-items: center;
+}
+
+.player__btn-shuffle-svg {
+  width: 19px;
+  height: 12px;
+  fill: transparent;
+  stroke: #696969;
+}
+
+.player__btn-shuffle--active svg {
+  fill: #b672ff !important;
+  stroke: #b672ff !important;
+}
+
 .bar {
   position: absolute;
   bottom: 0;
@@ -283,6 +385,11 @@ const handleNextTrack = () => {
   stroke: #696969;
 }
 
+.player__btn-repeat--active svg {
+  fill: #b672ff !important;
+  stroke: #b672ff !important;
+}
+
 .player__btn-shuffle {
   display: flex;
   align-items: center;
@@ -293,6 +400,11 @@ const handleNextTrack = () => {
   height: 12px;
   fill: transparent;
   stroke: #696969;
+}
+
+.player__btn-shuffle--active svg {
+  fill: #b672ff !important;
+  stroke: #b672ff !important;
 }
 
 .player__track-play {

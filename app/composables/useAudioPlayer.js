@@ -51,17 +51,16 @@ export function useAudioPlayer() {
       return;
     }
 
-    try {
-      if (
-        !playerStore.currentTrack ||
-        playerStore.currentTrack.id !== track.id
-      ) {
-        playerStore.setCurrentTrack(track);
-        playerStore.audioRef.src = track.url || "";
+    if (!track) {
+      console.error("Трек не передан");
+      return;
+    }
 
-        playerStore.setProgress(0);
-        playerStore.audioRef.load();
-      }
+    try {
+      playerStore.setCurrentTrack(track);
+      playerStore.audioRef.src = track.url || "#";
+      playerStore.audioRef.load();
+      playerStore.setProgress(0);
 
       await playerStore.audioRef.play();
       playerStore.setPlaying(true);
@@ -116,52 +115,20 @@ export function useAudioPlayer() {
     playerStore.setProgress(100);
   };
 
-  const prevTrack = () => {
-    if (!playerStore.currentTrack || playerStore.playlist.length === 0) {
-      return;
+  const prevTrack = async () => {
+    const prev = playerStore.goToPrevTrack();
+
+    if (prev) {
+      await playTrack(prev);
     }
-
-    const currentIndex = playerStore.playlist.findIndex(
-      (track) => track.id === playerStore.currentTrack.id
-    );
-
-    if (currentIndex === -1) {
-      return;
-    }
-
-    let prevIndex;
-    if (currentIndex === 0) {
-      prevIndex = playerStore.playlist.length - 1;
-    } else {
-      prevIndex = currentIndex - 1;
-    }
-
-    const prevTrack = playerStore.playlist[prevIndex];
-    playTrack(prevTrack);
   };
 
-  const nextTrack = () => {
-    if (!playerStore.currentTrack || playerStore.playlist.length === 0) {
-      return;
+  const nextTrack = async () => {
+    const next = playerStore.goToNextTrack();
+
+    if (next) {
+      await playTrack(next);
     }
-
-    const currentIndex = playerStore.playlist.findIndex(
-      (track) => track.id === playerStore.currentTrack.id
-    );
-
-    if (currentIndex === -1) {
-      return;
-    }
-
-    let nextIndex;
-    if (currentIndex === playerStore.playlist.length - 1) {
-      nextIndex = 0;
-    } else {
-      nextIndex = currentIndex + 1;
-    }
-
-    const nextTrack = playerStore.playlist[nextIndex];
-    playTrack(nextTrack);
   };
 
   return {
