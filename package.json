@@ -7,7 +7,18 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:unit": "vitest run app/components/*.test.js",
+    "test:pages": "vitest run app/pages/*.test.js",
+    "test:composables": "vitest run app/composables/*.test.js",
+    "test:stores": "vitest run app/stores/*.test.js",
+    "test:utils": "vitest run app/utils/*.test.js",
+    "test:all": "vitest run app/**/*.test.js"
   },
   "dependencies": {
     "@nuxt/eslint": "^1.10.0",
@@ -18,5 +29,15 @@
     "pinia": "^3.0.4",
     "vue": "^3.5.22",
     "vue-router": "^4.6.3"
+  },
+  "devDependencies": {
+    "@nuxt/test-utils": "^3.21.0",
+    "@vitejs/plugin-vue": "^5.2.3",
+    "@vue/test-utils": "^2.4.6",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
+    "happy-dom": "^20.0.11",
+    "jsdom": "^26.0.0",
+    "vitest": "^3.2.4"
   }
 }

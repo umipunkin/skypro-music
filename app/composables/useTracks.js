@@ -56,7 +56,6 @@ export const useTracks = () => {
           subtitle: "",
           author: track.author || "Неизвестный исполнитель",
           album: track.album || "Неизвестный альбом",
-          duration: formatDuration(track.duration_in_seconds || 0),
           genre: genre,
           release_date: track.release_date || null,
           url: track.track_file || "#",
@@ -90,12 +89,6 @@ export const useTracks = () => {
         "Не удалось загрузить треки. Попробуйте обновить страницу."
       );
     }
-  };
-
-  const formatDuration = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
   const loadFiltersFromStorage = () => {
@@ -205,9 +198,18 @@ export const useTracks = () => {
     hasActiveFilters: readonly(hasActiveFilters),
     getActiveFiltersCount: readonly(getActiveFiltersCount),
     fetchTracks,
-    formatDuration,
     applyFilters: handleFilterChange,
     searchTracks,
     clearAllFilters,
   };
 };
+
+export function formatDuration(seconds) {
+  if (typeof seconds !== "number" || isNaN(seconds) || seconds < 0) {
+    return "";
+  }
+
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+}

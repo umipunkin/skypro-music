@@ -1,6 +1,7 @@
+import { useUserStore } from "~/stores/user";
+
 export const useAuth = () => {
-  const user = ref(null);
-  const isAuthenticated = ref(false);
+  const userStore = useUserStore();
   const loading = ref(false);
 
   const API_URL = "https://webdev-music-003b5b991590.herokuapp.com";
@@ -64,14 +65,7 @@ export const useAuth = () => {
         tokens: tokenResponse,
       };
 
-      if (import.meta.client) {
-        localStorage.setItem("user", JSON.stringify(userData));
-        localStorage.setItem("accessToken", tokenResponse.access);
-        localStorage.setItem("refreshToken", tokenResponse.refresh);
-      }
-
-      user.value = userData;
-      isAuthenticated.value = true;
+      userStore.setUser(userData);
 
       return userData;
     } catch (error) {
@@ -83,61 +77,41 @@ export const useAuth = () => {
   };
 
   const logout = () => {
-    if (import.meta.client) {
-      localStorage.removeItem("user");
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-    }
-    user.value = null;
-    isAuthenticated.value = false;
+    userStore.clearUser();
   };
 
   const refreshToken = async () => {
-    if (import.meta.client) {
-      const refreshToken = localStorage.getItem("refreshToken");
-      if (!refreshToken) {
-        logout();
-        return null;
-      }
+    if (!userStore.refreshToken) {
+      userStore.clearUser();
+      return null;
+    }
 
-      try {
-        const response = await $fetch(`${API_URL}/user/token/refresh/`, {
-          method: "POST",
-          body: JSON.stringify({
-            refresh: refreshToken,
-          }),
-          headers: {
-            "content-type": "application/json",
-          },
-        });
+    try {
+      const response = await $fetch(`${API_URL}/user/token/refresh/`, {
+        method: "POST",
+        body: JSON.stringify({
+          refresh: userStore.refreshToken,
+        }),
+        headers: {
+          "content-type": "application/json",
+        },
+      });
 
-        localStorage.setItem("accessToken", response.access);
-        return response.access;
-      } catch (error) {
-        console.error("Token refresh error:", error);
-        logout();
-        return null;
-      }
+      userStore.updateAccessToken(response.access);
+      return response.access;
+    } catch (error) {
+      console.error("Token refresh error:", error);
+      userStore.clearUser();
+      return null;
     }
   };
 
   const checkAuth = () => {
-    if (import.meta.client) {
-      const savedUser = localStorage.getItem("user");
-      const accessToken = localStorage.getItem("accessToken");
-
-      if (savedUser && accessToken) {
-        user.value = JSON.parse(savedUser);
-        isAuthenticated.value = true;
-      }
-    }
+    return userStore.restoreUser();
   };
 
   const getAccessToken = () => {
-    if (import.meta.client) {
-      return localStorage.getItem("accessToken");
-    }
-    return null;
+    return userStore.accessToken;
   };
 
   if (import.meta.client) {
@@ -145,8 +119,8 @@ export const useAuth = () => {
   }
 
   return {
-    user: readonly(user),
-    isAuthenticated: readonly(isAuthenticated),
+    user: computed(() => userStore.user),
+    isAuthenticated: computed(() => userStore.isAuthenticated),
     loading: readonly(loading),
     register,
     login,

@@ -2,7 +2,7 @@
   <div>
     <div class="favorites-header">
       <h2 class="favorites-title">Избранное</h2>
-      <p class="favorites-subtitle">Ваша персональная коллекция треков</p>
+      <p class="favorites-subtext">Ваша персональная коллекция треков</p>
     </div>
 
     <div class="centerblock__search search">
@@ -47,13 +47,7 @@
         </div>
 
         <div v-if="favoriteTracks.length > 0" class="favorites-actions">
-          <button
-            class="clear-favorites"
-            @click="
-              favoriteTracks = [];
-              saveFavorites();
-            "
-          >
+          <button class="clear-favorites" @click="clearAllFavorites">
             Очистить избранное
           </button>
         </div>
@@ -80,7 +74,7 @@
       </div>
 
       <div v-else class="no-favorites">
-        <div class="no-favorites-icon">🔍</div>
+        <div class="no-favorites-icon" />
         <p class="no-favorites-text">Треки не найдены</p>
         <p class="no-favorites-subtext">Попробуйте изменить поисковый запрос</p>
       </div>
@@ -89,6 +83,7 @@
 </template>
 
 <script setup>
+import { useUserStore } from "~/stores/user";
 import { usePlayerStore } from "~/stores/player";
 
 useHead({
@@ -109,30 +104,15 @@ useSeoMeta({
 });
 
 const playerStore = usePlayerStore();
+const userStore = useUserStore();
 
 const { loading, error, fetchTracks } = useTracks();
 
 const searchQuery = ref("");
 
-const favoriteTracks = ref([]);
-
-const loadFavorites = () => {
-  if (import.meta.client) {
-    const saved = localStorage.getItem("favoriteTracks");
-    if (saved) {
-      favoriteTracks.value = JSON.parse(saved);
-    }
-  }
-};
-
-const saveFavorites = () => {
-  if (import.meta.client) {
-    localStorage.setItem(
-      "favoriteTracks",
-      JSON.stringify(favoriteTracks.value)
-    );
-  }
-};
+const favoriteTracks = computed(() => {
+  return userStore.getFavoriteTracks();
+});
 
 const filteredFavorites = computed(() => {
   if (!searchQuery.value.trim()) {
@@ -168,9 +148,12 @@ const retryLoading = () => {
   fetchTracks();
 };
 
+const clearAllFavorites = () => {
+  userStore.updateFavoriteTracks([]);
+};
+
 onMounted(() => {
   fetchTracks();
-  loadFavorites();
 });
 </script>
 
@@ -190,7 +173,7 @@ onMounted(() => {
   color: #ffffff;
 }
 
-.favorites-subtitle {
+.favorites-subtext {
   font-style: normal;
   font-weight: 400;
   font-size: 18px;
@@ -287,7 +270,6 @@ onMounted(() => {
   background: #9a5cd6;
 }
 
-/* Остальные стили как в index.vue */
 .centerblock__search {
   width: 100%;
   border-bottom: 1px solid #4e4e4e;
