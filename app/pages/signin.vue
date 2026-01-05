@@ -5,10 +5,10 @@
         <form class="modal__form-login" @submit.prevent="handleSubmit">
           <NuxtLink to="/">
             <div class="modal__logo">
-              <NuxtImg 
-                src="/img/logo_modal.png" 
-                alt="logo" 
-                width="140" 
+              <NuxtImg
+                src="/img/logo_modal.png"
+                alt="logo"
+                width="140"
                 height="21"
               />
             </div>
@@ -193,6 +193,3 @@ const navigateToSignup = () => {
   margin-bottom: 0;
 }
 </style>
-
-
-
