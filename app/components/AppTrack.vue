@@ -37,6 +37,8 @@
 
 <script setup>
 import { usePlayerStore } from "~/stores/player";
+import { useAudioPlayer } from "@/composables/useAudioPlayer";
+import { ref, computed, onMounted } from "vue";
 
 const playerStore = usePlayerStore();
 

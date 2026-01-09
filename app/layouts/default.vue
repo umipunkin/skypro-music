@@ -10,10 +10,9 @@
 
         <div class="main__sidebar sidebar">
           <div class="sidebar__personal">
-            <p v-if="isAuthenticated" class="sidebar__personal-name">
-              {{ user?.username || user?.email }}
+            <p class="sidebar__personal-name">
+              {{ userName }}
             </p>
-            <p v-else class="sidebar__personal-name">Гость</p>
             <div class="sidebar__icon" @click="handleAuthAction">
               <svg>
                 <use
@@ -77,7 +76,14 @@
 </template>
 
 <script setup>
-const { user, isAuthenticated, logout } = useAuth();
+import { useUserStore } from "~/stores/user";
+import { useAuth } from "~/composables/useAuth";
+
+const userStore = useUserStore();
+const { logout } = useAuth();
+
+const isAuthenticated = computed(() => userStore.isAuthenticated);
+const userName = computed(() => userStore.userName);
 
 const handleAuthAction = () => {
   if (isAuthenticated.value) {
@@ -86,6 +92,12 @@ const handleAuthAction = () => {
     navigateTo("/signin");
   }
 };
+
+onMounted(() => {
+  if (import.meta.client) {
+    userStore.restoreUser();
+  }
+});
 </script>
 
 <style scoped>
